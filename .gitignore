@@ -1,0 +1,9 @@
+# Environments
+.env
+
+# Code
+app.py
+app.ipynb
+
+# Data
+data
