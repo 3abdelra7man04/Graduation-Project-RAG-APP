@@ -1,9 +1,15 @@
 from fastapi import FastAPI, APIRouter
 
-base_router = APIRouter()
+# base router
+base_router = APIRouter(
+    prefix = "/api/v1",
+    tags = ["api-v1"],
+    )
 
+# routes
+## default route
 @base_router.get("/")
 def welcome():
     return {
-        "message": "Hello World!"
+        "message": "Hello All!"
     }
