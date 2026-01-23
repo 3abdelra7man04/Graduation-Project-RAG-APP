@@ -7,3 +7,6 @@ app.ipynb
 
 # Data
 data
+
+# Pycache
+__pycache__
