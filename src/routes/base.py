@@ -11,7 +11,7 @@ base_router = APIRouter(
 ## default route
 ## returns an app's name and version
 @base_router.get("/")
-def welcome():
+async def welcome():
     app_name = os.getenv("APP_NAME")
     app_version = os.getenv("APP_VERSION")
     return {
