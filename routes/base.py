@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter
+import os
 
 # base router
 base_router = APIRouter(
@@ -8,8 +9,12 @@ base_router = APIRouter(
 
 # routes
 ## default route
+## returns an app's name and version
 @base_router.get("/")
 def welcome():
+    app_name = os.getenv("APP_NAME")
+    app_version = os.getenv("APP_VERSION")
     return {
-        "message": "Hello All!"
+        "app_name": app_name,
+        "app_version": app_version
     }
