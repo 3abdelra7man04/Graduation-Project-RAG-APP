@@ -2,10 +2,11 @@ from fastapi import FastAPI, APIRouter, Depends, UploadFile, status
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
-from controllers import DataController, ProjectController
+from controllers import DataController, ProjectController, ProcessController
 import aiofiles
 from models import ResponseSignal
 import logging
+from .schemes.data import ProcessRequest
 
 # Uvicorn logger instance
 logger = logging.getLogger("uvicorn.error")
@@ -16,7 +17,7 @@ data_router = APIRouter(
     tags=["api_v1", "data"],
 )
 
-
+# upload endpoint
 @data_router.post("/upload/{project_id}")
 async def upload_data(
     project_id: str,
@@ -64,3 +65,32 @@ async def upload_data(
             "file_id": file_id,
         }
     )
+
+# process endpoint
+@data_router.post("/process/{project_id}")
+async def process_endpoint(project_id: str, process_request: ProcessRequest):
+    file_id = process_request.file_id
+    chunk_size = process_request.chunk_size
+    chunk_overlap = process_request.chunk_overlap
+    do_reset = process_request.do_reset
+
+    # create Process Controller object
+    process_cotroller = ProcessController(project_id=project_id)
+
+    # get file content
+    file_content = process_cotroller.get_file_content(file_id)
+
+    # get file chunks
+    file_chunks = process_cotroller.process_file_content(file_id=file_id, file_content=file_content,
+                                                         chunk_size= chunk_size,
+                                                         chunk_overlap=chunk_overlap)
+    
+    # if an  error occurs return 400 status code
+    if file_chunks is None or len(file_chunks) == 0:
+        return JSONResponse(
+            status_code = status.HTTP_400_BAD_REQUEST,
+            content = {
+                "signal" : ResponseSignal.PROCESSING_FAILED.value
+        })
+    
+    return file_chunks
