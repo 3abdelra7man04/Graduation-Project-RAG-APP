@@ -1,7 +1,7 @@
 # import libraries
 from fastapi import FastAPI
 from routes import base, data
-from motor.motor_asyncio import AsyncioMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import get_settings
 
 # fastAPI app
@@ -13,7 +13,7 @@ async def startup_db_client():
 
     settings = get_settings() # get app settings
 
-    app.mongo_connection = AsyncioMotorClient(settings.MONGODB_URL) # initialize mongo connection
+    app.mongo_connection = AsyncIOMotorClient(settings.MONGODB_URL) # initialize mongo connection
 
     app.db_client = app.mongo_connection[settings.MONGODB_DATABASE] # create db client
 
