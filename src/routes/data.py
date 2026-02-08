@@ -8,6 +8,8 @@ from models import ResponseSignal
 import logging
 from .schemes.data import ProcessRequest
 from models.ProjectModel import ProjectModel
+from models.DataChunkModel import DataChunkModel
+from models.db_schemes.data_chunk import DataChunk
 
 # Uvicorn logger instance
 logger = logging.getLogger("uvicorn.error")
@@ -78,7 +80,18 @@ async def upload_data(
 
 # process endpoint
 @data_router.post("/process/{project_id}")
-async def process_endpoint(project_id: str, process_request: ProcessRequest):
+async def process_endpoint(
+    request: Request,     # the reqeust object has the app and its data
+    project_id: str, 
+    process_request: ProcessRequest):
+
+    # get projects collection or create it
+    db_client = request.app.db_client  # get the db_client
+
+    project_model = ProjectModel(db_client=db_client) # create the ProjectModel instance
+
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+    
     file_id = process_request.file_id
     chunk_size = process_request.chunk_size
     chunk_overlap = process_request.chunk_overlap
@@ -103,4 +116,25 @@ async def process_endpoint(project_id: str, process_request: ProcessRequest):
                 "signal" : ResponseSignal.PROCESSING_FAILED.value
         })
     
-    return file_chunks
+    # add data chunks to collection
+    data_chunk_model = DataChunkModel(db_client=db_client) # create the DataChunkModel instance
+
+    file_chunks_documents = [
+        DataChunk(chunk_text = chunk.page_content,
+                  chunk_metadata = chunk.metadata,
+                  chunk_order = i + 1,
+                  chunk_project_id = project.id)
+        for i, chunk in enumerate(file_chunks)]
+    
+    if do_reset == True:
+        _ = await data_chunk_model.delete_chunks_by_project_id(project_id=project.id)
+    
+    file_chunks_len = await data_chunk_model.add_many_chunks(file_chunks_documents)
+    
+    # process completed successfully
+    return JSONResponse(
+        content={
+            "signal": ResponseSignal.PROCESSING_SUCCESS.value,
+            "file_id": file_id
+        }
+    )
