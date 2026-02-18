@@ -9,6 +9,9 @@ class DataChunkModel(BaseDataModel):
         super().__init__(db_client)
         self.collection = self.db_client[DataBaseEnum.CHUNKS_COLLECTION_NAME.value] # create "chunks" collection 
     
+    async def init_collection(self):
+        all_collections = await self.db_client.list_collection_names()
+        
     # add a chunk document to collection
     async def add_chunk(self, data_chunk: DataChunk):
         result = await self.collection.insert_one(data_chunk.dict(by_alias = True, exclude_unset = True))

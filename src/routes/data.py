@@ -32,7 +32,7 @@ async def upload_data(
     # get projects collection or create it
     db_client = request.app.db_client  # get the db_client
 
-    project_model = ProjectModel(db_client=db_client) # create the ProjectModel instance
+    project_model = ProjectModel.create_instance(db_client=db_client) # create the ProjectModel instance
 
     project = await project_model.get_project_or_create_one(project_id=project_id)
 
@@ -88,7 +88,7 @@ async def process_endpoint(
     # get projects collection or create it
     db_client = request.app.db_client  # get the db_client
 
-    project_model = ProjectModel(db_client=db_client) # create the ProjectModel instance
+    project_model = ProjectModel.create_instance(db_client=db_client) # create the ProjectModel instance
 
     project = await project_model.get_project_or_create_one(project_id=project_id)
     

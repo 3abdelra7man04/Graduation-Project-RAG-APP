@@ -12,3 +12,16 @@ class DataChunk(BaseModel):
     # make the pydantic accept the ObjectId type
     class Config:
         arbitrary_types_allowed = True
+
+
+    @classmethod
+    def get_indexes(cls):
+        return [
+            {
+                "key": [
+                    ("project_id", 1)
+                ],
+                "name": "project_id_index_1",
+                "unique": True
+            }
+        ]
