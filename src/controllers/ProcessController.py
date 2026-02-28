@@ -2,7 +2,7 @@ from .BaseController import BaseController
 from .ProjectController import ProjectController
 import os
 from langchain.document_loaders import TextLoader
-from langchain.document_loaders import PyMuPDFLoader
+from .utils.MyPDFLoader import MyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from models.enums.ProcesingEnums import ProcessingEnum
 
@@ -32,7 +32,7 @@ class ProcessController(BaseController):
             return TextLoader(file_path, encoding = "utf-8")
         
         if file_ext == ProcessingEnum.PDF.value :
-            return PyMuPDFLoader(file_path)
+            return MyPDFLoader(file_path, self.project_path, self.app_settings.FILE_IMAGES_MAX_WIDTH, self.app_settings.FILE_IMAGES_DPI)
         
         return None
     
