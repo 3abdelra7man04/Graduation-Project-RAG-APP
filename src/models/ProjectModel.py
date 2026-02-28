@@ -29,9 +29,8 @@ class ProjectModel(BaseDataModel):
                     index["key"], name=index["name"], unique=index["unique"]
                 )
 
-
     # add a new project to collection
-    async def add_project(self, project: Project):
+    async def create_project(self, project: Project):
         result = await self.collection.insert_one(
             project.dict(by_alias=True, exclude_unset=True)
         )

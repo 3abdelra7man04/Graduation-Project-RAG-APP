@@ -28,7 +28,9 @@ class ProcessController(BaseController):
             file_id
         )
 
-        if file_ext == ProcessingEnum.TEXT.value :
+        if not os.path.exists(file_path):
+            return None
+        if file_ext == ProcessingEnum.TXT.value :
             return TextLoader(file_path, encoding = "utf-8")
         
         if file_ext == ProcessingEnum.PDF.value :
@@ -39,7 +41,9 @@ class ProcessController(BaseController):
     # get file content
     def get_file_content(self, file_id: str):
         loader = self.get_file_loader(file_id=file_id)
-        return loader.load()
+        if loader : 
+            return loader.load()
+        return None
     
     # parse file content
     def process_file_content(self, file_id: str, file_content: list,

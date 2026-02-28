@@ -8,7 +8,7 @@ class DataChunk(BaseModel):
     chunk_metadata: dict                                # chunk metadata field
     chunk_order: int = Field(..., gt = 0)               # chunk order field and force it to start from one
     chunk_project_id: ObjectId                          # chunk project id
-
+    chunk_asset_id: ObjectId
     # make the pydantic accept the ObjectId type
     class Config:
         arbitrary_types_allowed = True
