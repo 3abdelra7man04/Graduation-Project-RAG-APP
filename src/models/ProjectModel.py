@@ -8,7 +8,7 @@ class ProjectModel(BaseDataModel):
     def __init__(self, db_client: object):
         super().__init__(db_client=db_client)
         self.collection = self.db_client[
-            DataBaseEnum.COLLECTION_PROJECT_NAME.value
+            DataBaseEnum.PROJECT_COLLECTION_NAME.value
         ]  # create "prjects" collection
 
     # Async factory method to initialize the instance and its DB collection.
@@ -21,8 +21,8 @@ class ProjectModel(BaseDataModel):
     # Creates the DB collection and builds its indexes if it doesn't exist.
     async def init_collection(self):
         all_collections = await self.db_client.list_collection_names()
-        if DataBaseEnum.COLLECTION_PROJECT_NAME.value not in all_collections:
-            self.collection = self.db_client[DataBaseEnum.COLLECTION_PROJECT_NAME.value]
+        if DataBaseEnum.PROJECT_COLLECTION_NAME.value not in all_collections:
+            self.collection = self.db_client[DataBaseEnum.PROJECT_COLLECTION_NAME.value]
             indexes = Project.get_indexes()
             for index in indexes:
                 await self.collection.create_index(
