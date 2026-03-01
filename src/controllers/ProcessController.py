@@ -30,7 +30,8 @@ class ProcessController(BaseController):
 
         if not os.path.exists(file_path):
             return None
-        if file_ext == ProcessingEnum.TXT.value :
+        
+        if file_ext == ProcessingEnum.TEXT.value :
             return TextLoader(file_path, encoding = "utf-8")
         
         if file_ext == ProcessingEnum.PDF.value :
