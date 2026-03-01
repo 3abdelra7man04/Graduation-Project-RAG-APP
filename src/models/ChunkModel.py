@@ -4,14 +4,31 @@ from .db_schemes.data_chunk import DataChunk
 from bson.objectid import ObjectId
 from pymongo import InsertOne
 
-class DataChunkModel(BaseDataModel):
+class ChunkModel(BaseDataModel):
     def __init__(self, db_client):
         super().__init__(db_client)
         self.collection = self.db_client[DataBaseEnum.CHUNKS_COLLECTION_NAME.value] # create "chunks" collection 
     
+    @classmethod
+    async def create_instance(cls, db_client):
+        instance = cls(db_client)
+        await instance.init_collection()
+        return instance
+    
     async def init_collection(self):
         all_collections = await self.db_client.list_collection_names()
         
+        if DataBaseEnum.CHUNKS_COLLECTION_NAME.value not in all_collections:
+            self.collection = self.db_client[DataBaseEnum.CHUNKS_COLLECTION_NAME.value]
+            indexes = DataChunk.get_indexes()
+            for index in indexes:
+                self.collection.create_index(
+                    key = index["key"],
+                    name = index["name"],
+                    unique = index["unique"]
+                )
+    
+
     # add a chunk document to collection
     async def add_chunk(self, data_chunk: DataChunk):
         result = await self.collection.insert_one(data_chunk.dict(by_alias = True, exclude_unset = True))

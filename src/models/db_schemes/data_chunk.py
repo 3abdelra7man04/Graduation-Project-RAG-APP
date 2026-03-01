@@ -19,9 +19,9 @@ class DataChunk(BaseModel):
         return [
             {
                 "key": [
-                    ("project_id", 1)
+                    ("chunk_project_id", 1)
                 ],
-                "name": "project_id_index_1",
-                "unique": True
+                "name": "chunk_project_id_index_1",
+                "unique": False
             }
         ]
