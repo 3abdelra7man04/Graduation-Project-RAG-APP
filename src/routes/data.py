@@ -10,7 +10,8 @@ from .schemes.data import ProcessRequest
 from models.ProjectModel import ProjectModel
 from models.ChunkModel import ChunkModel
 from models.AssetModel import AssetModel
-from models.db_schemes import DataChunk, Asset
+from models.db_schemes.data_chunk import DataChunk
+from models.db_schemes.asset import Asset
 from models.enums.AssetTypeEnum import AssetTypeEnum
 
 # Uvicorn logger instance
@@ -83,6 +84,7 @@ async def upload_data(
         asset_name=file_id,
         asset_size=os.path.getsize(file_path),
     )
+
     asset_record = await asset_model.create_asset(asset=asset_resource)
 
     # Upload completed successfully
@@ -118,7 +120,6 @@ async def process_endpoint(
     project_model = await ProjectModel.create_instance(db_client=request.app.db_client)
     project = await project_model.get_project_or_create_one(project_id=project_id)
 
-    project_files_ids = []
     asset_model = await AssetModel.create_instance(db_client=request.app.db_client)
 
     project_files_ids = {}
@@ -161,7 +162,7 @@ async def process_endpoint(
 
     chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
 
-    if do_reset == 1:
+    if do_reset == True:
         _ = await chunk_model.delete_chunks_by_project_id(project_id=project.id)
 
     for asset_id, file_id in project_files_ids.items():
@@ -200,7 +201,7 @@ async def process_endpoint(
 
         chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
 
-        no_records += await chunk_model.insert_many_chunks(chunks=file_chunks_records)
+        no_records += await chunk_model.add_many_chunks(data_chunks=file_chunks_records)
         no_files += 1
 
     return JSONResponse(
