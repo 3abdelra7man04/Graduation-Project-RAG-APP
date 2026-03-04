@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from bson.objectid import ObjectId
 
@@ -7,7 +7,7 @@ class Project(BaseModel):
     project_id: str = Field(..., min_length = 1) # project_id field that can't take None values
 
     # valida that the project_id field always containt alphanumeric values
-    @validator('project_id')
+    @field_validator('project_id')
     def validate_project_id(cls, value):
         if not value.isalnum():
             raise ValueError('project_id must be alphanumeric')

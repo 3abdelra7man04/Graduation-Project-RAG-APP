@@ -31,7 +31,7 @@ class ChunkModel(BaseDataModel):
 
     # add a chunk document to collection
     async def add_chunk(self, data_chunk: DataChunk):
-        result = await self.collection.insert_one(data_chunk.dict(by_alias = True, exclude_unset = True))
+        result = await self.collection.insert_one(data_chunk.model_dump(by_alias = True, exclude_unset = True))
         data_chunk.id = result.inserted_id
 
         return data_chunk
