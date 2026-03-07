@@ -13,8 +13,8 @@
 //     const [chats,setChats]=useState([]);
 //     const [selectChat,setSelectChat] = useState(null);
 //     const [theme,setTheme]=useState(localStorage.getItem('theme')||'light');
-   
-   
+
+
 //     const fetchUserChats =async()=>{
 //         setChats(dummyChats)
 //         setSelectChat(dummyChats[0])
@@ -35,7 +35,7 @@
 //             setChats([])
 //             setSelectChat(null)
 //         }
-        
+
 //     },[user])
 
 //     useEffect(()=>{
@@ -130,7 +130,7 @@
 
 // export const AppContextProvider = ({ children }) => {
 //   const navigate = useNavigate();
-  
+
 //   // عنوان السيرفر (FastAPI) - غيره حسب الـ IP أو Port الخاص بك
 //   const backendUrl = "http://127.0.0.1:8000"; 
 
@@ -267,13 +267,21 @@ export const AppContextProvider = (props) => {
     const [selectChat, setSelectChat] = useState(null);
     const [messages, setMessages] = useState([]);
     const [theme, setTheme] = useState(localStorage.getItem('theme') || "light");
-    const backendUrl = "http://127.0.0.1:8000";
+    const backendUrl = "http://127.0.0.1:5000";
 
     const loadUserData = async () => {
         if (!token) return;
         try {
-            const { data } = await axios.get(`${backendUrl}/api/user/get-profile`, { headers: { token } });
-            if (data.success) setUser(data.userData);
+            const projectId = 0;
+            const { data } = await axios.get(`${backendUrl}/api/v1/user/get-profile/${projectId}?user_id=${token}`, { headers: { token } });
+            if (data.userData) {
+                // Map the backend Pydantic model structure to the frontend React expected structure
+                setUser({
+                    id: data.userData.id,
+                    name: data.userData.user_name,
+                    email: data.userData.user_email,
+                });
+            }
         } catch (e) { console.log(e); }
     };
 
@@ -315,10 +323,10 @@ export const AppContextProvider = (props) => {
         if (token) { loadUserData(); loadUserChats(); }
     }, [token]);
 
-    const value = { 
-        token, setToken, user, chats, selectChat, setSelectChat, messages, setMessages, 
+    const value = {
+        token, setToken, user, chats, selectChat, setSelectChat, messages, setMessages,
         theme, setTheme, backendUrl, logout, sendPrompt, getChatMessages,
-        createNewChat: () => { setSelectChat(null); setMessages([]); } 
+        createNewChat: () => { setSelectChat(null); setMessages([]); }
     };
     return <AppContext.Provider value={value}>{props.children}</AppContext.Provider>;
 };
