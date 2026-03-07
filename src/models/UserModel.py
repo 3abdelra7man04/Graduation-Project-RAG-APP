@@ -6,8 +6,8 @@ from pydantic import EmailStr
 from bson.objectid import ObjectId
 
 class UserModel(BaseDataModel):
-    def __int__(self, db_client: object):
-        super().__init__(db_client)
+    def __init__(self, db_client: object):
+        super().__init__(db_client = db_client)
         self.collection = self.db_client[DataBaseEnum.USERS_COLLECTION_NAME.value]
     
     @classmethod
@@ -21,15 +21,15 @@ class UserModel(BaseDataModel):
 
         if DataBaseEnum.USERS_COLLECTION_NAME.value not in all_collections:
             self.collection = self.db_client[DataBaseEnum.USERS_COLLECTION_NAME.value]
-            indexes = User().get_indexes()
+            indexes = User.get_indexes()
             
             for index in indexes:
-                self.collection.create_index(
-                key = index["key"],
+                await self.collection.create_index(
+                keys = index["key"],
                 name = index["name"],
                 unique = index["unique"]
             )
-    
+        
     # check if user is already created and then create it 
     async def create_user(self, user: User):
         # user is unique
@@ -47,17 +47,17 @@ class UserModel(BaseDataModel):
         user = await self.collection.find_one({"user_email": email})
 
         if user:
-            return user
+            return User(**user)
         else:
             return None
     
     # get user by id
-    async def get_user_by_id(self, id: ObjectId):
+    async def get_user_by_id(self, id: str):
 
-        user = await self.collection.find_one({"user_id": id})
+        user = await self.collection.find_one({"_id": ObjectId(id)})
 
         if user:
-            return user
+            return User(**user)
         else:
             return None
         

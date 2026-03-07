@@ -22,7 +22,7 @@ class ChunkModel(BaseDataModel):
             self.collection = self.db_client[DataBaseEnum.CHUNKS_COLLECTION_NAME.value]
             indexes = DataChunk.get_indexes()
             for index in indexes:
-                self.collection.create_index(
+               await  self.collection.create_index(
                     key = index["key"],
                     name = index["name"],
                     unique = index["unique"]
