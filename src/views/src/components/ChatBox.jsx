@@ -27,7 +27,7 @@
 
 //                     </div>
 //                 )}
-                
+
 
 // {/* {messages.map((message,index)=><Messages key={index} message={message} />) } */}
 //             </div>
@@ -531,7 +531,7 @@
 //       <div className="flex-1 overflow-y-auto mb-4 space-y-4 custom-scrollbar">
 //   {messages.length === 0 && (
 //     <div className="h-full flex flex-col items-center justify-center py-20 text-center">
-      
+
 //       {/* الحاوية العلوية: الصورة والعنوان بجانب بعض */}
 //       <div className="flex items-center gap-3 mb-2">
 //         <img 
@@ -549,12 +549,12 @@
 // <h1 className={`text-2xl md:text-3xl font-bold transition-colors leading-tight ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
 //   How can I help you today?
 // </h1>
-      
+
 //       {/* خط جمالي بسيط تحت الكلام */}
 //       <div className="w-16 h-1 bg-[#1A9BB3] rounded-full mt-6 opacity-20"></div>
 //     </div>
 //   )}
-  
+
 //   {messages.map((m) => (
 //     <Message key={m.id} message={m} />
 //   ))}
@@ -628,7 +628,7 @@
 
 //     const userMsg = { id: Date.now(), role: "user", content: prompt, timestamp: new Date() };
 //     setMessages(prev => [...prev, userMsg]);
-    
+
 //     const currentPrompt = prompt;
 //     setPrompt("");
 //     setLoading(true);
@@ -674,7 +674,7 @@
 //             <div className="w-16 h-1 bg-[#1A9BB3] rounded-full mt-6 opacity-40"></div>
 //           </div>
 //         )}
-        
+
 //         {messages.map((m) => (
 //           <Message key={m.id} message={m} />
 //         ))}
@@ -719,7 +719,7 @@
 //         {/* الـ Footer المصغر */}
 //         <div className="flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity duration-300">
 //           <div className="h-[1px] w-6 bg-gray-300 dark:bg-white/20"></div>
-          
+
 //           <div className="flex items-center gap-1.5">
 //             <p className="text-[10px] font-medium tracking-wide text-gray-500 dark:text-[#B1A6C0]">
 //               Powered by
@@ -763,8 +763,8 @@ const ChatBox = () => {
         return names[0][0].toUpperCase();
     };
 
-    useEffect(() => { 
-        scrollRef.current?.scrollIntoView({ behavior: "smooth" }); 
+    useEffect(() => {
+        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, loading]);
 
     const handleSend = async (e) => {
@@ -780,10 +780,10 @@ const ChatBox = () => {
 
     return (
         <div className="flex flex-col h-full max-w-4xl mx-auto w-full p-4 md:p-8">
-            
+
             {/* منطقة الرسائل */}
             <div className="flex-1 overflow-y-auto mb-4 space-y-6 custom-scrollbar">
-                
+
                 {(!messages || messages.length === 0) && (
                     <div className="h-full flex flex-col items-start justify-center py-20 text-left px-6 md:px-12 animate-in fade-in duration-700">
                         <div className="flex items-end gap-3 mb-1">
@@ -798,10 +798,10 @@ const ChatBox = () => {
                         <div className="w-16 h-1 bg-[#1A9BB3] rounded-full mt-6 opacity-40"></div>
                     </div>
                 )}
-                
+
                 {messages && messages.map((msg, index) => (
                     <div key={index} className={`flex gap-3 ${msg?.role === 'user' ? 'flex-row-reverse' : 'flex-row'} animate-in slide-in-from-bottom-2 duration-300`}>
-                        
+
                         {/* أيقونة الطرف المتحدث */}
                         <div className="flex-shrink-0 mt-1">
                             {msg?.role === 'user' ? (
@@ -818,11 +818,10 @@ const ChatBox = () => {
                         </div>
 
                         {/* محتوى الرسالة */}
-                        <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
-                            msg?.role === 'user' 
-                            ? 'bg-[#1A9BB3] text-white rounded-tr-none' 
-                            : (theme === 'dark' ? 'bg-[#252525] text-gray-200 rounded-tl-none' : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none')
-                        }`}>
+                        <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${msg?.role === 'user'
+                                ? 'bg-[#1A9BB3] text-white rounded-tr-none'
+                                : (theme === 'dark' ? 'bg-[#252525] text-gray-200 rounded-tl-none' : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none')
+                            }`}>
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">
                                 {msg?.content || "..."}
                             </p>
@@ -833,7 +832,7 @@ const ChatBox = () => {
                 {loading && (
                     <div className="flex gap-3 items-start animate-pulse">
                         <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-[#252525] flex items-center justify-center">
-                             <img src={assets.logoooooo} className="w-4 h-4 opacity-40" alt="Uni" />
+                            <img src={assets.logoooooo} className="w-4 h-4 opacity-40" alt="Uni" />
                         </div>
                         <div className="bg-gray-100 dark:bg-[#252525] p-3 px-4 rounded-2xl text-sm text-gray-400">
                             UniAsk is thinking...
@@ -860,10 +859,10 @@ const ChatBox = () => {
                             </svg>
                         </button>
                     </div>
-                </form> 
-                
+                </form>
+
                 {/* Footer */}
-                <div className="flex items-center gap-2 opacity-60">
+                <div className="flex items-center gap-2 opacity-60 translate-y-3">
                     <p className="text-[10px] font-medium text-gray-500">Powered by</p>
                     <p className="text-sm font-black tracking-tighter">
                         <span className={theme === 'dark' ? 'text-white' : 'text-gray-800'}>Uni</span>
