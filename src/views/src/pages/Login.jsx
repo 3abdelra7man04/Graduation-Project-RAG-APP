@@ -10,7 +10,7 @@
 //         e.preventDefault();
 //     }
 //     return(
-       
+
 //         <form onSubmit={handleSubmit} className="flex flex-col gap-4 m-auto items-start p-8 py-12 w-80 sm:w-[352px] text-gray-500 rounded-lg shadow-xl border border-gray-200 bg-white">
 //             <p className="text-2xl font-medium m-auto">
 //                 <span className="text-purple-700">User</span> {state === "login" ? "Login" : "Sign Up"}
@@ -42,7 +42,7 @@
 //                 {state === "register" ? "Create Account" : "Login"}
 //             </button>
 //         </form>
-        
+
 //     );
 // }
 // export  default Login
@@ -66,7 +66,7 @@
 //     try {
 //       const endpoint = state === "register" ? "/api/user/register" : "/api/user/login";
 //       const payload = state === "register" ? { name, email, password } : { email, password };
-      
+
 //       const { data } = await axios.post(`${backendUrl}${endpoint}`, payload);
 
 //       if (data.success) {
@@ -86,14 +86,14 @@
 //       <p className="text-2xl font-black m-auto">
 //         <span className="text-[#1A9BB3]">User</span> {state === "login" ? "Login" : "Sign Up"}
 //       </p>
-      
+
 //       {state === "register" && (
 //         <div className="w-full">
 //           <p className="text-xs mb-1">Name</p>
 //           <input onChange={(e) => setName(e.target.value)} value={name} className="border dark:border-white/10 dark:bg-[#252525] rounded-xl w-full p-2.5 outline-[#1A9BB3]" type="text" required />
 //         </div>
 //       )}
-      
+
 //       <div className="w-full">
 //         <p className="text-xs mb-1">Email</p>
 //         <input onChange={(e) => setEmail(e.target.value)} value={email} className="border dark:border-white/10 dark:bg-[#252525] rounded-xl w-full p-2.5 outline-[#1A9BB3]" type="email" required />
@@ -132,62 +132,67 @@ const Login = ({ setShowAuthOverlay }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { backendUrl, setToken } = useAppContext();
+  const { backendUrl, setToken, theme } = useAppContext();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const endpoint = state === "register" ? "/api/user/register" : "/api/user/login";
+      const projectId = 0;
+      const endpoint = state === "register" ? `/api/v1/user/register/${projectId}` : `/api/v1/user/login/${projectId}`;
       const payload = state === "register" ? { name, email, password } : { email, password };
-      
+
       const { data } = await axios.post(`${backendUrl}${endpoint}`, payload);
 
-      if (data.success) {
-        // تحديث التوكن في الـ Context فوراً لتحديث السايد بار
-        setToken(data.token);
-        localStorage.setItem("token", data.token);
+      if (data.user_id) {
+        setToken(data.user_id);
+        localStorage.setItem("token", data.user_id);
         toast.success(state === "register" ? "Account Created!" : "Welcome Back!");
-        
-        // إغلاق نافذة اللوجن والضباب بعد النجاح
         if (setShowAuthOverlay) setShowAuthOverlay(false);
       } else {
-        toast.error(data.message);
+        toast.error(data.signal || "Authentication failed");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Connection Error");
+      toast.error(error.response?.data?.signal || "Connection Error");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 m-auto items-start p-8 py-10 w-80 sm:w-[352px] text-gray-500 rounded-3xl shadow-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#1e1e1e] animate-in zoom-in duration-300">
-      <p className="text-2xl font-black m-auto">
+    <form onSubmit={handleSubmit} className={`flex flex-col gap-4 m-auto items-start p-8 py-10 w-80 sm:w-[352px] rounded-3xl shadow-2xl border transition-colors animate-in zoom-in duration-300
+      ${theme === 'dark' ? 'bg-[#1e1e1e] border-white/5 text-gray-400' : 'bg-white border-gray-200 text-gray-600'}`}>
+      <p className={`text-2xl font-black m-auto ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
         <span className="text-[#1A9BB3]">User</span> {state === "login" ? "Login" : "Sign Up"}
       </p>
-      
+
       {state === "register" && (
         <div className="w-full">
-          <p className="text-xs mb-1">Name</p>
-          <input onChange={(e) => setName(e.target.value)} value={name} className="border dark:border-white/10 dark:bg-[#252525] rounded-xl w-full p-2.5 outline-[#1A9BB3]" type="text" required />
+          <p className="text-xs mb-1 font-medium">Name</p>
+          <input onChange={(e) => setName(e.target.value)} value={name} type="text" required 
+            className={`border rounded-xl w-full p-2.5 outline-[#1A9BB3] transition-colors
+              ${theme === 'dark' ? 'border-white/10 bg-[#252525] text-white' : 'border-gray-200 bg-gray-50 text-gray-900'}`} />
         </div>
       )}
-      
+
       <div className="w-full">
-        <p className="text-xs mb-1">Email</p>
-        <input onChange={(e) => setEmail(e.target.value)} value={email} className="border dark:border-white/10 dark:bg-[#252525] rounded-xl w-full p-2.5 outline-[#1A9BB3]" type="email" required />
+        <p className="text-xs mb-1 font-medium">Email</p>
+        <input onChange={(e) => setEmail(e.target.value)} value={email} type="email" required 
+          className={`border rounded-xl w-full p-2.5 outline-[#1A9BB3] transition-colors
+              ${theme === 'dark' ? 'border-white/10 bg-[#252525] text-white' : 'border-gray-200 bg-gray-50 text-gray-900'}`} />
       </div>
 
       <div className="w-full">
-        <p className="text-xs mb-1">Password</p>
-        <input onChange={(e) => setPassword(e.target.value)} value={password} className="border dark:border-white/10 dark:bg-[#252525] rounded-xl w-full p-2.5 outline-[#1A9BB3]" type="password" required />
+        <p className="text-xs mb-1 font-medium">Password</p>
+        <input onChange={(e) => setPassword(e.target.value)} value={password} type="password" required 
+          className={`border rounded-xl w-full p-2.5 outline-[#1A9BB3] transition-colors
+              ${theme === 'dark' ? 'border-white/10 bg-[#252525] text-white' : 'border-gray-200 bg-gray-50 text-gray-900'}`} />
       </div>
 
       <button type="submit" className="bg-[#1A9BB3] hover:opacity-90 text-white w-full py-3 rounded-xl font-bold mt-2 transition-all active:scale-95 shadow-lg">
         {state === "register" ? "Create Account" : "Login"}
       </button>
 
-      <p className="text-xs m-auto">
-        {state === "register" ? "Already have account?" : "New to UniAsk?"} 
-        <span onClick={() => setState(state === 'login' ? 'register' : 'login')} className="text-[#1A9BB3] cursor-pointer font-bold ml-1">Click here</span>
+      <p className="text-xs m-auto mt-1">
+        {state === "register" ? "Already have account?" : "New to UniAsk?"}
+        <span onClick={() => setState(state === 'login' ? 'register' : 'login')} className="text-[#1A9BB3] cursor-pointer font-bold ml-1 hover:underline">Click here</span>
       </p>
     </form>
   );
