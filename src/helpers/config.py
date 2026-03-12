@@ -2,18 +2,41 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Settings class that's used in main get the app configurations
 class Settings(BaseSettings):
+
+    # ---------------------- APP Config ----------------------
     APP_NAME: str
     APP_VERSION: str
-    OPENROUTER_API_KEY: str
-
+    
+    # ---------------------- FILES Config ----------------------
     FILE_ALLOWED_TYPES: list
     FILE_MAX_SIZE: int
     FILE_DEFAULT_CHUNK_SIZE: int
     FILE_IMAGES_MAX_WIDTH: int
     FILE_IMAGES_DPI: int
     
+    # ---------------------- DB Config ----------------------
     MONGODB_URL: str
     MONGODB_DATABASE: str
+
+    # ---------------------- LLM Config ----------------------
+
+    EXTRACTION_BACKEND: str
+    GENERATION_BACKEND: str
+    EMBEDDING_BACKEND: str
+
+    OPENAI_API_KEY: str
+    OPENAI_API_URL: str
+    COHERE_API_KEY: str
+
+    EXTRACTION_MODEL_ID: str = None
+    GENERATION_MODEL_ID: str = None
+    EMBEDDING_MODEL_ID: str = None
+    EMBEDDING_MODEL_SIZE: int = None
+
+    EXTRACTION_MAX_OUTPUT_TOKENS: int = None
+    INPUT_MAX_CHARACTERS: int = None
+    GENERATION_OUTPUT_MAX_TOKENS: int = None
+    GENERATION_TEMPERATURE: float = None
 
     class Config():
         env_file = ".env"       # .env path described for the BaseSettings class
