@@ -13,3 +13,4 @@ pillow==12.1.0
 openai==2.24.0
 poppler_utils==0.1.0
 pydantic[email]==2.12.5
+cohere==5.20.7
