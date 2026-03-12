@@ -4,25 +4,37 @@ from routes import base, data, user
 from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import get_settings
 from fastapi.middleware.cors import CORSMiddleware
+from stores.llm.LLMFactory import LLMFactory
 
 # fastAPI app
 app = FastAPI()
 
 # mongo connection startup
-@app.on_event("startup")
 async def startup_db_client():
 
-    settings = get_settings() # get app settings
+    # get app settings
+    settings = get_settings()
 
-    app.mongo_connection = AsyncIOMotorClient(settings.MONGODB_URL) # initialize mongo connection
+    # initialize mongo connection
+    app.mongo_connection = AsyncIOMotorClient(settings.MONGODB_URL) 
 
-    app.db_client = app.mongo_connection[settings.MONGODB_DATABASE] # create db client
+    # create db client
+    app.db_client = app.mongo_connection[settings.MONGODB_DATABASE] 
+
+    # create llm generation client
+    app.generation_client = LLMFactory.create_provider_instance(provider_name = settings.GENERATION_BACKEND)
+    app.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
+
+    # create llm embedding client
+    app.embedding_client = LLMFactory.create_provider_instance(provider_name = settings.EMBEDDING_BACKEND)
+    app.embedding_client.set_embedding_model(model_id = settings.EMBEDDING_MODEL_ID, embedding_size = settings.EMBEDDING_MODEL_SIZE)
 
 # mongo connection shutdown
-@app.on_event("shutdown")
 async def shutdown_db_client():
     app.mongo_connection.close()
 
+app.router.lifespan.on_startup.append(startup_db_client)
+app.router.lifespan.on_shutdown.append(shutdown_db_client)
 
 # include the base router created in base.py
 app.include_router(base.base_router)
