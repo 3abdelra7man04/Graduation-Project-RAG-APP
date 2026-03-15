@@ -25,3 +25,6 @@ class LLMFactory:
                 generation_output_max_tokens= self.settings.GENERATION_OUTPUT_MAX_TOKENS,
                 generation_temperature= self.settings.GENERATION_TEMPERATURE
             )
+
+        return None
+    
