@@ -1,0 +1,9 @@
+from enum import Enum
+
+class DataBaseEnum(Enum):
+
+    PROJECT_COLLECTION_NAME = "projects"
+    CHUNKS_COLLECTION_NAME = "chunks"
+    ASSET_COLLECTION_NAME = "assets"
+    USERS_COLLECTION_NAME = "users"
+    
