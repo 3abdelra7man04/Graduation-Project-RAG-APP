@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     GENERATION_OUTPUT_MAX_TOKENS: int = None
     GENERATION_TEMPERATURE: float = None
 
+
+    # ---------------------- VectorDB Config ----------------------
+    VECTOR_DB_BACKEND: str 
+    VECTOR_DB_PATH: str
+
     class Config():
         env_file = ".env"       # .env path described for the BaseSettings class
 
