@@ -5,6 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import get_settings
 from fastapi.middleware.cors import CORSMiddleware
 from stores.llm.LLMFactory import LLMFactory
+from stores.vectordb.vectordbFactory import VectordbFactory
 
 # fastAPI app
 app = FastAPI()
@@ -28,6 +29,9 @@ async def startup_db_client():
     # create llm embedding client
     app.embedding_client = LLMFactory.create_provider_instance(provider_name = settings.EMBEDDING_BACKEND)
     app.embedding_client.set_embedding_model(model_id = settings.EMBEDDING_MODEL_ID, embedding_size = settings.EMBEDDING_MODEL_SIZE)
+
+    # create vector db client
+    app.vectordb_client = VectordbFactory.create_provider_instance(provider=settings.VECTOR_DB_BACKEND)
 
 # mongo connection shutdown
 async def shutdown_db_client():
