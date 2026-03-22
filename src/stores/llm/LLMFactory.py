@@ -1,5 +1,5 @@
-from llm_enums import LLMEnums
-from providers import OpenAIProvider, CoHereProvider
+from .llm_enums import LLMEnums
+from .providers import OpenAIProvider, CoHereProvider
 
 class LLMFactory:
     def __init__(self, settings: dict):
