@@ -7,12 +7,20 @@ from qdrant_client.models import Distance, PointStruct, VectorParams
 class QdrantDBProvider(VectordbInterface):
     
     # constructor
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, distance_method: str):
         super().__init__()
 
         self.db_path = db_path
 
         self.client = QdrantClient(path = db_path)
+
+        # cosine distance
+        if distance_method == DistanceMethodsEnums.COSINE.value:
+            self.distance_method = Distance.COSINE
+        
+        # dot distance
+        if distance_method == DistanceMethodsEnums.DOT.value:
+            self.distance_method = Distance.DOT
 
         self.logger = logging.getLogger(__name__)
 
@@ -37,18 +45,10 @@ class QdrantDBProvider(VectordbInterface):
         return False
 
     # create collection
-    def create_collection(self, collection_name, embedding_size, distance_method, do_reset = False):
+    def create_collection(self, collection_name, embedding_size, do_reset = False):
         
         if do_reset:
             self.delete_collection(collection_name)
-        
-        # cosine distance
-        if distance_method == DistanceMethodsEnums.COSINE.value:
-            self.distance_method = Distance.COSINE
-        
-        # dot distance
-        if distance_method == DistanceMethodsEnums.DOT.value:
-            self.distance_method = Distance.DOT
         
         # if collection does not exist
         if not self.does_collection_exist(collection_name):
