@@ -62,14 +62,11 @@ class QdrantDBProvider(VectordbInterface):
         return False
     
     def insert_vectors(self, collection_name: str, embedding_texts: list, embedding_vectors: list,
-                         metadatas: list = None, record_ids: list = None, batch_size: int = 50):
+                         metadatas: list = None, batch_size: int = 50):
 
-        # handle none metadata and record ids
+        # handle none metadata
         if metadatas is None:
             metadatas = [None] * len(embedding_texts)
-        
-        if record_ids is None:
-            record_ids = [None] * len(embedding_texts)
         
         # check collection existence
         if not self.does_collection_exist(collection_name= collection_name):
@@ -83,12 +80,11 @@ class QdrantDBProvider(VectordbInterface):
             batch_embedding_texts = embedding_texts[i:batch_end]
             batch_embedding_vectors = embedding_vectors[i:batch_end]
             batch_metadatas = metadatas[i:batch_end]
-            batch_record_ids = record_ids[i:batch_end]
             
             try:
                 self.client.upsert(collection_name= collection_name,
                                 wait=True,
-                                points= [PointStruct(id=batch_record_ids[j], vector=batch_embedding_vectors[j],
+                                points= [PointStruct(id= i + j, vector=batch_embedding_vectors[j],
                                                     payload={
                                                         "text": batch_embedding_texts[j],
                                                         "metadata": batch_metadatas[j]

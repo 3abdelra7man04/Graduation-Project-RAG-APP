@@ -24,7 +24,7 @@ class VectordbInterface(ABC):
 
     @abstractmethod
     def insert_vectors(self, collection_name: str, embedding_texts: list, embedding_vectors: list,
-                         metadatas: list = None, record_ids: list = None, batch_size: int = 50):
+                         metadatas: list = None, batch_size: int = 50):
         pass
 
     @abstractmethod
