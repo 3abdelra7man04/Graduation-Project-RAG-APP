@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     # ---------------------- VectorDB Config ----------------------
     VECTOR_DB_BACKEND: str 
     VECTOR_DB_PATH: str
+    VECTOR_DB_DISTANCE_METHOD: str
 
     class Config():
         env_file = ".env"       # .env path described for the BaseSettings class
