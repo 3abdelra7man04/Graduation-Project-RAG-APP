@@ -1,6 +1,6 @@
 # import libraries
 from fastapi import FastAPI
-from routes import base, data, user
+from routes import base, data, user, nlp
 from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import get_settings
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,29 +22,34 @@ async def startup_db_client():
     # create db client
     app.db_client = app.mongo_connection[settings.MONGODB_DATABASE] 
 
+    # LLMFactory instance
+    llm_factory = LLMFactory(settings= settings)
     # create llm generation client
-    app.generation_client = LLMFactory.create_provider_instance(provider_name = settings.GENERATION_BACKEND)
+    app.generation_client = llm_factory.create_provider_instance(provider_name = settings.GENERATION_BACKEND)
     app.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
 
     # create llm embedding client
-    app.embedding_client = LLMFactory.create_provider_instance(provider_name = settings.EMBEDDING_BACKEND)
+    app.embedding_client = llm_factory.create_provider_instance(provider_name = settings.EMBEDDING_BACKEND)
     app.embedding_client.set_embedding_model(model_id = settings.EMBEDDING_MODEL_ID, embedding_size = settings.EMBEDDING_MODEL_SIZE)
 
     # create vector db client
-    app.vectordb_client = VectordbFactory.create_provider_instance(provider=settings.VECTOR_DB_BACKEND)
+    vectordb_factory = VectordbFactory(settings= settings)
+    app.vectordb_client = vectordb_factory.create_provider_instance(provider=settings.VECTOR_DB_BACKEND)
 
 # mongo connection shutdown
 async def shutdown_db_client():
     app.mongo_connection.close()
 
-app.router.lifespan.on_startup.append(startup_db_client)
-app.router.lifespan.on_shutdown.append(shutdown_db_client)
+app.on_event("startup")(startup_db_client)
+app.on_event("shutdown")(shutdown_db_client)
 
 # include the base router created in base.py
 app.include_router(base.base_router)
 # include the data router created in data.py
 app.include_router(data.data_router)
-#include the user router created in user.py
+# include the nlp router created in nlp.py
+app.include_router(nlp.nlp_router)
+# include the user router created in user.py
 app.include_router(user.user_router)
 
 # أهم جزء للربط مع React
