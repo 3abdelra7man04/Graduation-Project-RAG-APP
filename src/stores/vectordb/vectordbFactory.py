@@ -12,7 +12,8 @@ class VectordbFactory:
         if provider == VectordbEnums.QDRANT.value:
 
             # get database path using base controller
-            db_path = BaseController.get_database_path(self.settings.VECTOR_DB_PATH)
+            base_controller = BaseController()
+            db_path = base_controller.get_database_path(db_path=self.settings.VECTOR_DB_PATH)
 
             return QdrantDBProvider(db_path= db_path, distance_method= self.settings.VECTOR_DB_DISTANCE_METHOD,)
 
