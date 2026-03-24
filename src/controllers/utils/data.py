@@ -84,7 +84,7 @@ def extract_pages(file_path,  output_base_dir, max_width = 600, dpi = 200):
     # Model Client 
     client = OpenAI(
     base_url= MyPDFLoaderEnum.BASE_URL.value,
-    api_key= get_settings().OPENROUTER_API_KEY,
+    api_key= get_settings().OPENAI_API_KEY,
     )
 
 
