@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from .schemes.retrieved_documents import RetrievedDocuments
 class VectordbInterface(ABC):
 
     @abstractmethod
@@ -28,5 +28,5 @@ class VectordbInterface(ABC):
         pass
 
     @abstractmethod
-    def search_vectors(self, collection_name: str, query_vector: list, limit: int):
+    def search_vectors(self, collection_name: str, query_vector: list, limit: int) -> list[RetrievedDocuments]:
         pass

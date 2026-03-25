@@ -3,7 +3,7 @@ from ..vectordb_enums import DistanceMethodsEnums
 import logging
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
-
+from ..schemes.retrieved_documents import RetrievedDocuments
 class QdrantDBProvider(VectordbInterface):
     
     # constructor
@@ -101,7 +101,17 @@ class QdrantDBProvider(VectordbInterface):
         # check collection existence
         if not self.does_collection_exist(collection_name= collection_name):
             self.logger.error(f"cannot find collection of name : {collection_name}")
-            return False
+            return None
         
-        return self.client.query_points(collection_name= collection_name,
-                                        query=query_vector, limit=limit).points
+        results =  self.client.query_points(collection_name= collection_name,
+                                            query=query_vector, limit=limit).points
+        
+        if not results:
+            self.logger.error(f"serch error : {collection_name}")
+            return None
+        
+        return [RetrievedDocuments(**{
+            "text":result.payload["text"],
+            "score": result.score
+        }) for result in results]
+    
