@@ -6,6 +6,7 @@ from helpers.config import get_settings
 from fastapi.middleware.cors import CORSMiddleware
 from stores.llm.LLMFactory import LLMFactory
 from stores.vectordb.vectordbFactory import VectordbFactory
+from stores.llm.templates.template_parser import TemplateParser
 
 # fastAPI app
 app = FastAPI()
@@ -35,6 +36,10 @@ async def startup_db_client():
     # create vector db client
     vectordb_factory = VectordbFactory(settings= settings)
     app.vectordb_client = vectordb_factory.create_provider_instance(provider=settings.VECTOR_DB_BACKEND)
+
+    # template parser
+    template_parser = TemplateParser(language=settings.PRIMARY_LANG, default_language=settings.DEFAULT_LANG)
+    app.template_parser = template_parser
 
 # mongo connection shutdown
 async def shutdown_db_client():
