@@ -28,3 +28,15 @@ class ResponseSignal(Enum):
     LOGIN_FAILED = "login failed"
     PROFILE_FOUND = "profile found successfully"
     PROFILE_NOT_FOUND = "profile not found"
+
+    # ---------------------- vector db signals ----------------------
+    VECTOR_DB_INDEXING_ERROR = "error when inserting in vector db"
+    VECTOR_DB_INDEXING_SUCCESS = "vectordb indexing success"
+    VECTOR_DB_COLLECTION_NOT_FOUND = "vectordb collection not found"
+    VECTOR_DB_GET_INFO_SUCCESS = "vectordb collection info retrieved successfully"
+    VECTOR_DB_SEARCH_SUCCESS = "succecfully searched vectordb collection"
+
+    # ---------------------- answer signals ----------------------
+    RAG_ANSWER_ERROR = "answer error"
+    RAG_ANSWER_SUCCESS = "your query is successfully answered"
+    
