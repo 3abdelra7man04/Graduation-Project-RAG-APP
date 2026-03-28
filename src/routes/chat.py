@@ -1,0 +1,181 @@
+from bson import ObjectId
+from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request
+from fastapi.responses import JSONResponse
+import logging
+from .schemes.chat import ChatRequest
+from models.ProjectModel import ProjectModel
+from models.ChatModel import ChatModel
+from models.enums.ResponseEnums import ResponseSignal
+from controllers import NLPController
+from models.db_schemes.chat import Chat
+from datetime import datetime
+
+
+# Uvicorn logger instance
+logger = logging.getLogger("uvicorn.error")
+
+# nlp API router
+chat_router = APIRouter(
+    prefix="/api/v1/chat",
+    tags=["api_v1", "chat"],
+)
+
+# start conversation
+@chat_router.post("/{project_id}")
+async def start_conversation(request: Request, project_id: str,  chat_request: ChatRequest):
+
+    # get projects collection or create it
+    db_client = request.app.db_client  # get the db_client
+
+    project_model = await ProjectModel.create_instance(
+        db_client=db_client
+    )  # create the ProjectModel instance
+
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
+    # project not found
+    if not project:
+        return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
+            )
+    
+    # nlp_controller instance
+    nlp_controller = NLPController(generation_client= request.app.generation_client,
+                                   embedding_client=request.app.embedding_client,
+                                   vectordb_client= request.app.vectordb_client,
+                                   template_parser=request.app.template_parser)
+    
+    answer, full_prompt, chat_history = nlp_controller.answer_rag_questions(project, query = chat_request.query, limit=chat_request.limit)
+
+    # chat model
+    chat_model = await ChatModel.create_instance(db_client)
+
+    chat_title = chat_request.query[:30]
+
+    chat_id = await chat_model.create_chat(Chat(
+        chat_project_id= project.id,
+        chat_user_id= ObjectId(chat_request.user_id),
+        chat_title= chat_title,
+        chat_history=chat_history,
+        updatedAt=datetime.utcnow()
+    ))
+
+    if not answer:
+        return JSONResponse(
+            status_code= status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.RAG_ANSWER_ERROR.value}
+        )
+    
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"signal": ResponseSignal.RAG_ANSWER_SUCCESS.value,
+                 "answer": answer,
+                 "chat_id": str(chat_id),
+                 "chat_title": chat_title}
+    )
+    
+
+@chat_router.post("/{project_id}/c/{chat_id}")
+async def continue_conversation(request: Request, project_id: str, chat_id: str,  chat_request: ChatRequest):
+
+    # get projects collection or create it
+    db_client = request.app.db_client  # get the db_client
+
+    project_model = await ProjectModel.create_instance(
+        db_client=db_client
+    )  # create the ProjectModel instance
+
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
+    # project not found
+    if not project:
+        return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
+            )
+    
+    # nlp_controller instance
+    nlp_controller = NLPController(generation_client= request.app.generation_client,
+                                   embedding_client=request.app.embedding_client,
+                                   vectordb_client= request.app.vectordb_client,
+                                   template_parser=request.app.template_parser)
+    
+    # chat model
+    chat_model = await ChatModel.create_instance(db_client)
+
+    # get chat history
+    chat = await chat_model.get_chat_by_id(chat_id= ObjectId(chat_id))
+
+    chat_history = chat.chat_history
+
+    
+    # get answer
+    answer, full_prompt, chat_history = nlp_controller.answer_rag_questions(project, query = chat_request.query,
+                                                                            limit=chat_request.limit,
+                                                                            chat_history = chat_history)
+
+    
+    # update chat history
+    res = await chat_model.update_chat_history(
+        chat_id= ObjectId(chat_id),
+        chat_history=chat_history
+    )
+
+    # return response
+    if not answer:
+        return JSONResponse(
+            status_code= status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.RAG_ANSWER_ERROR.value}
+        )
+    
+    return JSONResponse(
+        status_code= status.HTTP_200_OK,
+        content={"signal": ResponseSignal.RAG_ANSWER_SUCCESS.value,
+                 "answer": answer,
+                 "chat_id": str(chat_id),
+                 "chat_title": chat.chat_title}
+    )
+
+@chat_router.get("/{project_id}/list/{user_id}")
+async def list_chats(request: Request, project_id: str, user_id: str):
+    
+     # get projects collection or create it
+    db_client = request.app.db_client  # get the db_client
+
+    project_model = await ProjectModel.create_instance(
+        db_client=db_client
+    )  # create the ProjectModel instance
+
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
+    # project not found
+    if not project:
+        return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
+            )
+    
+    # chat model instance
+    chat_model = await ChatModel.create_instance(db_client)
+
+    # get all chats
+    all_chats = await chat_model.list_all_user_chats(project_id= ObjectId(project.id),
+                                                     user_id = ObjectId(user_id),
+                                                     ascending=False)
+    
+    for chat in all_chats:
+        chat["updatedAt"] = str(chat["updatedAt"])
+
+    # return response
+    if not all_chats:
+        return JSONResponse(
+            status_code= status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.LIST_CHATS_ERROR.value}
+        )
+    
+    return JSONResponse(
+        status_code= status.HTTP_200_OK,
+        content={"signal": ResponseSignal.LIST_CHATS_SUCCESS.value,
+                 "all_chats": all_chats}
+    )

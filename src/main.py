@@ -1,6 +1,6 @@
 # import libraries
 from fastapi import FastAPI
-from routes import base, data, user, nlp
+from routes import base, data, user, nlp, chat
 from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import get_settings
 from fastapi.middleware.cors import CORSMiddleware
@@ -56,6 +56,8 @@ app.include_router(data.data_router)
 app.include_router(nlp.nlp_router)
 # include the user router created in user.py
 app.include_router(user.user_router)
+# include the chat router created in chat.py
+app.include_router(chat.chat_router)
 
 # أهم جزء للربط مع React
 app.add_middleware(

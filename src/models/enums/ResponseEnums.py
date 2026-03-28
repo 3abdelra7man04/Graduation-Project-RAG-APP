@@ -39,4 +39,8 @@ class ResponseSignal(Enum):
     # ---------------------- answer signals ----------------------
     RAG_ANSWER_ERROR = "answer error"
     RAG_ANSWER_SUCCESS = "your query is successfully answered"
+
+    # ---------------------- answer signals ----------------------
+    LIST_CHATS_SUCCESS = "chats are successfully listed"
+    LIST_CHATS_ERROR = "error in listing chats"
     
