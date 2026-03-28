@@ -65,7 +65,7 @@ class NLPController(BaseController):
 
         return response
     
-    def answer_rag_questions(self, Project: Project, query: str, limit: int):
+    def answer_rag_questions(self, Project: Project, query: str, limit: int, chat_history: list[dict] = None):
 
         # retrieve documents
         retrieved_documents = self.search_in_vectordb(Project=Project, query=query, limit=limit)
@@ -74,8 +74,17 @@ class NLPController(BaseController):
             return None
         
         # construct llm prompt
-        system_prompt = self.template_parser.get("rag", "system_prompt")
-
+        ## check chat_history
+        if chat_history is None or len(chat_history) == 0:
+            system_prompt = self.template_parser.get("rag", "system_prompt")
+            chat_history = [
+                            self.generation_client.construct_prompt(
+                                prompt = system_prompt,
+                                role = self.generation_client.enums.SYSTEM.value 
+                            )
+                        ]
+        
+        ## add user query to chat history
         document_prompts = "\n".join([
             self.template_parser.get("rag", "document_prompt", {
                 "doc_num": i+1,
@@ -86,17 +95,21 @@ class NLPController(BaseController):
 
         footer_prompt = self.template_parser.get("rag", "footer_prompt", {"query": query})
 
-        chat_history = [
-            self.generation_client.construct_prompt(
-                prompt = system_prompt,
-                role = self.generation_client.enums.SYSTEM.value 
-            )
-        ]
+    
 
         full_prompt = "".join([document_prompts, footer_prompt])
 
+        # get answer
         answer = self.generation_client.generate_text(
             prompt = full_prompt, chat_history = chat_history, 
+        )
+
+        # update the chat history with the answer of assistant
+        chat_history.append(
+            self.generation_client.construct_prompt(
+                prompt = answer,
+                role = self.generation_client.enums.ASSISTANT.value 
+            )
         )
 
         return answer, full_prompt, chat_history
