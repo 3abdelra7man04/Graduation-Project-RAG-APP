@@ -1,7 +1,7 @@
 from .BaseController import BaseController
 from .ProjectController import ProjectController
 import os
-from langchain.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader
 from .utils.MyPDFLoader import MyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from models.enums.ProcesingEnums import ProcessingEnum
