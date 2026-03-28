@@ -6,4 +6,5 @@ class DataBaseEnum(Enum):
     CHUNKS_COLLECTION_NAME = "chunks"
     ASSET_COLLECTION_NAME = "assets"
     USERS_COLLECTION_NAME = "users"
+    CHATS_COLLECTION_NAME = "chats"
     
