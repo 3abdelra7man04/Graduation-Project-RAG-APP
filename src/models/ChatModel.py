@@ -36,10 +36,11 @@ class ChatModel(BaseDataModel):
 
         return result.inserted_id
     
-    async def update_chat_history(self, chat_id: ObjectId, chat_history: list[dict]):
+    async def update_chat_history_and_conversation(self, chat_id: ObjectId, chat_history: list[dict], question: str, answer: str):
         result = await self.collection.update_one(
             {"_id": chat_id},
-            {"$set" : {"chat_history": chat_history, "updatedAt": datetime.utcnow()}}
+            {"$set" : {"chat_history": chat_history, "updatedAt": datetime.utcnow()},
+             "$push" : {"chat_conversation": {"question": question, "answer": answer}}}
         )
 
         return result
@@ -76,10 +77,10 @@ class ChatModel(BaseDataModel):
                 "chat_project_id": project_id,
                 "chat_user_id": user_id}, 
                 {   
-                    "_id": 0,
                     "chat_project_id": 0,
                     "chat_user_id": 0,
-                    "chat_history": 0
+                    "chat_history": 0,
+                    "chat_conversation": 0
                 }).sort("updatedAt", order).to_list(length = None)
 
         return chats

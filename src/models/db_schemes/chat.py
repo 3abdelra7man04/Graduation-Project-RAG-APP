@@ -9,6 +9,7 @@ class Chat(BaseModel):
     chat_user_id: ObjectId
     chat_title: str
     chat_history: list[dict]
+    chat_conversation: list[dict] 
     updatedAt: datetime = Field(default_factory=datetime.utcnow)
 
     class Config():
