@@ -310,9 +310,10 @@ function App() {
           <div className={`h-full transition-all duration-500 
             ${(showAuthOverlay && !token) ? 'blur-2xl pointer-events-none scale-95' : 'scale-100'}`}>
             <Routes>
-              <Route path='/' element={<ChatBox />} />
-              {/* إعادة توجيه أي مسار غير معروف للرئيسية */}
-              <Route path='*' element={<Navigate to="/" />} />
+              <Route path='/app' element={<ChatBox />} />
+              <Route path='/app/c/:chatId' element={<ChatBox />} />
+              {/* إعادة توجيه أي مسار غير معروف لصفحة التطبيق */}
+              <Route path='*' element={<Navigate to="/app" />} />
             </Routes>
           </div>
 

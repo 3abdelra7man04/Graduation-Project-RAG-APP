@@ -901,8 +901,10 @@ import React, { useState, useRef, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
 import { assets } from "../assets/assets/assets";
 import moment from "moment";
+import { useNavigate } from "react-router-dom";
 
 const SideBar = ({ isMenuOpen, setIsMenuOpen, setShowAuthOverlay }) => {
+  const navigate = useNavigate();
   const { 
     chats, 
     selectChat, 
@@ -969,7 +971,7 @@ const SideBar = ({ isMenuOpen, setIsMenuOpen, setShowAuthOverlay }) => {
 
         {/* New Chat Button */}
         <button 
-          onClick={() => (token || user) ? createNewChat() : setShowAuthOverlay(true)}
+          onClick={() => (token || user) ? createNewChat(navigate) : setShowAuthOverlay(true)}
           className={`flex justify-center items-center w-full py-2.5 mt-8 font-bold rounded-xl cursor-pointer transition-all duration-300 shadow-lg active:scale-95
           ${theme === 'dark' ? 'bg-[#1A9BB3] hover:bg-[#158296] text-white' : 'bg-[#1A9BB3] hover:bg-[#147e92] text-white'}`}
         >
@@ -1003,7 +1005,8 @@ const SideBar = ({ isMenuOpen, setIsMenuOpen, setShowAuthOverlay }) => {
                     : (theme === 'dark' ? 'hover:bg-white/5' : 'hover:bg-gray-50')}`}
                 onClick={() => { 
                   setSelectChat(chat); 
-                  getChatMessages(chat._id); 
+                  getChatMessages(chat._id);
+                  navigate(`/app/c/${chat._id}`);
                   if (window.innerWidth < 768) setIsMenuOpen(false); 
                 }}
               >
