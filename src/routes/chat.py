@@ -51,13 +51,18 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
     # chat model
     chat_model = await ChatModel.create_instance(db_client)
 
+    # chat title
     chat_title = chat_request.query[:30]
+
+    # chat conversation
+    chat_conversation = [{"question": chat_request.query, "answer": answer}]
 
     chat_id = await chat_model.create_chat(Chat(
         chat_project_id= project.id,
         chat_user_id= ObjectId(chat_request.user_id),
         chat_title= chat_title,
         chat_history=chat_history,
+        chat_conversation= chat_conversation,
         updatedAt=datetime.utcnow()
     ))
 
@@ -116,10 +121,14 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
                                                                             chat_history = chat_history)
 
     
+    print(f"chat_id: {chat_id}")
+
     # update chat history
-    res = await chat_model.update_chat_history(
+    res = await chat_model.update_chat_history_and_conversation(
         chat_id= ObjectId(chat_id),
-        chat_history=chat_history
+        chat_history=chat_history,
+        question= chat_request.query,
+        answer = answer
     )
 
     # return response
@@ -165,6 +174,7 @@ async def list_chats(request: Request, project_id: str, user_id: str):
                                                      ascending=False)
     
     for chat in all_chats:
+        chat["_id"] = str(chat["_id"])
         chat["updatedAt"] = str(chat["updatedAt"])
 
     # return response
@@ -178,4 +188,41 @@ async def list_chats(request: Request, project_id: str, user_id: str):
         status_code= status.HTTP_200_OK,
         content={"signal": ResponseSignal.LIST_CHATS_SUCCESS.value,
                  "all_chats": all_chats}
+    )
+
+@chat_router.get("/{project_id}/get/{chat_id}")
+async def get_chat_conversation(request: Request, project_id: str, chat_id: str):
+    
+     # get projects collection or create it
+    db_client = request.app.db_client
+
+    project_model = await ProjectModel.create_instance(db_client=db_client)
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
+    # project not found
+    if not project:
+        return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
+            )
+    
+    # chat model instance
+    chat_model = await ChatModel.create_instance(db_client)
+
+    # get chat history safely
+    try:
+        chat = await chat_model.get_chat_by_id(chat_id= ObjectId(chat_id))
+    except Exception:
+        chat = None
+
+    if not chat:
+        return JSONResponse(
+            status_code= status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.LIST_CHATS_ERROR.value}
+        )
+    
+    return JSONResponse(
+        status_code= status.HTTP_200_OK,
+        content={"signal": ResponseSignal.LIST_CHATS_SUCCESS.value,
+                 "chat_conversation": chat.chat_conversation}
     )

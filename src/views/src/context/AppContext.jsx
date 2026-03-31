@@ -37,9 +37,9 @@ export const AppContextProvider = (props) => {
             if (data && data.all_chats) {
                 // Map the backend structure to the frontend structure safely
                 const mappedChats = data.all_chats.map((c, i) => ({
-                    _id: c._id || `temp-id-${i}-${Date.now()}`, // Temporary ID since the backend currently omits it
+                    _id: c._id,
                     name: c.chat_title || "Untitled Chat",
-                    messages: c.chat_history || [],
+                    messages: [],
                     updatedAt: c.updatedAt || new Date()
                 }));
                 setChats(mappedChats);
@@ -49,35 +49,43 @@ export const AppContextProvider = (props) => {
 
     const getChatMessages = async (chatId) => {
         try {
-            const { data } = await axios.get(`${backendUrl}/api/chat/get/${chatId}`, { headers: { token } });
-            if (data.success) setMessages(data.messages || []);
-        } catch (e) { console.log(e); }
+            const projectId = "0";
+            const { data } = await axios.get(`${backendUrl}/api/v1/chat/${projectId}/get/${chatId}`, { headers: { token } });
+            if (data && data.chat_conversation) {
+                // Map {question, answer} pairs into flat {role, content} messages
+                const mapped = data.chat_conversation.flatMap(({ question, answer }) => [
+                    { role: "user", content: question },
+                    { role: "assistant", content: answer },
+                ]);
+                setMessages(mapped);
+            } else if (data && data.chat_history) {
+                // Fallback: backend still returns chat_history key
+                setMessages(data.chat_history);
+            }
+        } catch (e) {
+            console.error(e);
+            setMessages([]);
+        }
     };
 
     const sendPrompt = async (prompt) => {
-        if (!prompt.trim()) return;
+        if (!prompt.trim()) return null;
         try {
             const userMsg = { role: "user", content: prompt };
             setMessages(prev => [...(prev || []), userMsg]);
 
             const projectId = "0"; // Match the hardcoded projectId used in loadUserData
             let response;
+            let isNewChat = false;
 
             if (!selectChat?._id) {
                 // start conversation branch
+                isNewChat = true;
                 response = await axios.post(`${backendUrl}/api/v1/chat/${projectId}`, {
                     query: prompt,
                     user_id: token,
                     limit: 3
                 }, { headers: { token } });
-            } else if (selectChat._id.startsWith("temp-id-")) {
-                // Prevent crashing backend due to stripped IDs in ChatModel.py
-                console.error("Cannot continue chat because its real ID was removed by the backend.");
-                setMessages(prev => [...(prev || []), {
-                    role: "assistant",
-                    content: "Sorry, I can't reply to this past chat because its actual ID was not returned by the backend. Please fix ChatModel.py to return the _id!"
-                }]);
-                return;
             } else {
                 // continue conversation branch
                 response = await axios.post(`${backendUrl}/api/v1/chat/${projectId}/c/${selectChat._id}`, {
@@ -92,7 +100,10 @@ export const AppContextProvider = (props) => {
                 const botMessage = { role: "assistant", content: data.answer };
                 setMessages(prev => [...(prev || []), botMessage]);
                 loadUserChats();
-                if (!selectChat) setSelectChat({ _id: data.chat_id });
+                if (isNewChat && data.chat_id) {
+                    setSelectChat({ _id: data.chat_id });
+                    return data.chat_id; // return new chat_id so caller can update URL
+                }
             }
         } catch (e) {
             console.error("Backend error:", e);
@@ -102,6 +113,7 @@ export const AppContextProvider = (props) => {
             };
             setMessages(prev => [...(prev || []), errorMessage]);
         }
+        return null;
     };
 
     const logout = () => {
@@ -114,9 +126,9 @@ export const AppContextProvider = (props) => {
     }, [token]);
 
     const value = {
-        token, setToken, user, chats, selectChat, setSelectChat, messages, setMessages,
+            token, setToken, user, chats, selectChat, setSelectChat, messages, setMessages,
         theme, setTheme, backendUrl, logout, sendPrompt, getChatMessages,
-        createNewChat: () => { setSelectChat(null); setMessages([]); }
+        createNewChat: (navigate) => { setSelectChat(null); setMessages([]); if (navigate) navigate('/app'); }
     };
     return <AppContext.Provider value={value}>{props.children}</AppContext.Provider>;
 };
