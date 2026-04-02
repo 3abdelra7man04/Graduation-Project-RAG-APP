@@ -48,3 +48,7 @@ class ResponseSignal(Enum):
     CHAT_DELETE_SUCCESS = "chat is successfully deleted"
     CHAT_DELETE_ERROR = "error when deleting chat"
     
+    # ---------------------- update chat signal ----------------------
+    CHAT_RENAME_SUCCESS = "chat title is successfully renamed"
+    CHAT_RENAME_ERROR = "error when renaming chat"
+    

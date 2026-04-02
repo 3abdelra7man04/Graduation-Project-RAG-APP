@@ -2,7 +2,7 @@ from bson import ObjectId
 from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request
 from fastapi.responses import JSONResponse
 import logging
-from .schemes.chat import ChatRequest
+from .schemes.chat import ChatRequest, RenameChatRequest
 from models.ProjectModel import ProjectModel
 from models.ChatModel import ChatModel
 from models.enums.ResponseEnums import ResponseSignal
@@ -261,3 +261,36 @@ async def delete_conversation(request: Request, project_id: str, chat_id: str):
         content={"signal": ResponseSignal.CHAT_DELETE_SUCCESS.value}
     )
 
+@chat_router.put("/{project_id}/rename/{chat_id}")
+async def rename_chat(request: Request, project_id: str, chat_id: str, rename_chat_request: RenameChatRequest):
+
+    # get projects collection or create it
+    db_client = request.app.db_client
+
+    project_model = await ProjectModel.create_instance(db_client=db_client)
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
+    # project not found
+    if not project:
+        return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
+            )
+    
+    # chat model instance
+    chat_model = await ChatModel.create_instance(db_client)
+
+    # update chat title
+    rename_res = await chat_model.update_chat_title(chat_id=ObjectId(chat_id),
+                                                    chat_title= rename_chat_request.new_title)
+
+    if not rename_res:
+        return JSONResponse(
+            status_code= status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.CHAT_RENAME_ERROR.value}
+        )
+    
+    return JSONResponse(
+        status_code= status.HTTP_200_OK,
+        content={"signal": ResponseSignal.CHAT_RENAME_SUCCESS.value}
+    )
