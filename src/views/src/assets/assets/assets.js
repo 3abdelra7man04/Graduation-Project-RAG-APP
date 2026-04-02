@@ -27,7 +27,7 @@ import ai_image10 from "./ai_image10.jpg";
 import ai_image11 from "./ai_image11.jpg";
 import ai_image12 from "./ai_image12.jpg";
 import new_logo from './loooo.svg'
-import logoooooo from './new_logo.svg'
+import logoooooo from './final_logo.svg'
 
 export const assets = {
     logo,
