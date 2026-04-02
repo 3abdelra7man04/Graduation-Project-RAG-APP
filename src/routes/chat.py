@@ -226,3 +226,38 @@ async def get_chat_conversation(request: Request, project_id: str, chat_id: str)
         content={"signal": ResponseSignal.LIST_CHATS_SUCCESS.value,
                  "chat_conversation": chat.chat_conversation}
     )
+
+
+@chat_router.delete("/{project_id}/delete/{chat_id}")
+async def delete_conversation(request: Request, project_id: str, chat_id: str):
+
+    # get projects collection or create it
+    db_client = request.app.db_client
+
+    project_model = await ProjectModel.create_instance(db_client=db_client)
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
+    # project not found
+    if not project:
+        return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
+            )
+    
+    # chat model instance
+    chat_model = await ChatModel.create_instance(db_client)
+
+    # delete conversation
+    del_res = await chat_model.delete_chat_by_id(chat_id= ObjectId(chat_id))
+
+    if not del_res:
+        return JSONResponse(
+            status_code= status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.CHAT_DELETE_ERROR.value}
+        )
+    
+    return JSONResponse(
+        status_code= status.HTTP_200_OK,
+        content={"signal": ResponseSignal.CHAT_DELETE_SUCCESS.value}
+    )
+

@@ -40,7 +40,11 @@ class ResponseSignal(Enum):
     RAG_ANSWER_ERROR = "answer error"
     RAG_ANSWER_SUCCESS = "your query is successfully answered"
 
-    # ---------------------- answer signals ----------------------
+    # ---------------------- List chat signals ----------------------
     LIST_CHATS_SUCCESS = "chats are successfully listed"
     LIST_CHATS_ERROR = "error in listing chats"
+    
+    # ---------------------- delete chat signal ----------------------
+    CHAT_DELETE_SUCCESS = "chat is successfully deleted"
+    CHAT_DELETE_ERROR = "error when deleting chat"
     
