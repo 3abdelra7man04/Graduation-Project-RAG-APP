@@ -41,6 +41,9 @@ async def startup_db_client():
     template_parser = TemplateParser(language=settings.PRIMARY_LANG, default_language=settings.DEFAULT_LANG)
     app.template_parser = template_parser
 
+    # guest chat TTL
+    app.guest_chat_TTL = settings.CHAT_DOCUMENT_TTL
+    
 # mongo connection shutdown
 async def shutdown_db_client():
     app.mongo_connection.close()

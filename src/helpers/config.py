@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     # ---------------------- DB Config ----------------------
     MONGODB_URL: str
     MONGODB_DATABASE: str
-
+    CHAT_DOCUMENT_TTL: float
+    
     # ---------------------- LLM Config ----------------------
 
     EXTRACTION_BACKEND: str
