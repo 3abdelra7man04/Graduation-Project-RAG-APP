@@ -4,7 +4,8 @@ from bson.objectid import ObjectId
 
 class ChatRequest(BaseModel):
     
-    user_id: str
+    user_id: Optional[str]
+    is_guest: bool = False
     query: str
     limit: Optional[int] = 3
 
