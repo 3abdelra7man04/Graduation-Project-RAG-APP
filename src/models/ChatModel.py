@@ -3,7 +3,7 @@ from .BaseDataModel import BaseDataModel
 from .enums.DataBaseEnum import DataBaseEnum
 from bson.objectid import ObjectId
 from .db_schemes.chat import Chat
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class ChatModel(BaseDataModel):
     def __init__(self, db_client: object):
@@ -23,10 +23,10 @@ class ChatModel(BaseDataModel):
             self.collection = self.db_client[DataBaseEnum.CHATS_COLLECTION_NAME.value]
             indexes = Chat.get_indexes()
             for index in indexes:
-               await  self.collection.create_index(
-                    keys = index["key"],
-                    name = index["name"],
-                    unique = index["unique"]
+                keys = index.pop("key")
+                await  self.collection.create_index(
+                    keys = keys,
+                    **index
                 )
     
     # creates chat and returns its id
@@ -45,6 +45,14 @@ class ChatModel(BaseDataModel):
 
         return result
     
+    async def update_chat_expiry(self, chat_id: ObjectId, TTL: float):
+        result = await self.collection.update_one(
+            {"_id": chat_id},
+            {"$set" : {"expiresAt": datetime.utcnow() + timedelta(seconds= TTL)}}
+        )
+
+        return result
+
     async def update_chat_title(self, chat_id: ObjectId, chat_title: str):
         result = await self.collection.update_one(
             {"_id": chat_id},
