@@ -137,13 +137,15 @@ export const AppContextProvider = (props) => {
                 isNewChat = true;
                 response = await axios.post(`${backendUrl}/api/v1/chat/${projectId}`, {
                     query: prompt,
-                    user_id: token,
+                    user_id: token ? token : null,
+                    is_guest: !token,
                     limit: 3
                 }, { headers: { token } });
             } else {
                 response = await axios.post(`${backendUrl}/api/v1/chat/${projectId}/c/${selectChat._id}`, {
                     query: prompt,
-                    user_id: token,
+                    user_id: token ? token : null,
+                    is_guest: !token,
                     limit: 3
                 }, { headers: { token } });
             }

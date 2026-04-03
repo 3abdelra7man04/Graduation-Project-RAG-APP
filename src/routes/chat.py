@@ -8,7 +8,7 @@ from models.ChatModel import ChatModel
 from models.enums.ResponseEnums import ResponseSignal
 from controllers import NLPController
 from models.db_schemes.chat import Chat
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 # Uvicorn logger instance
@@ -52,19 +52,37 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
     chat_model = await ChatModel.create_instance(db_client)
 
     # chat title
-    chat_title = chat_request.query[:30]
+    chat_title = None
+    if not chat_request.is_guest:
+        chat_title = chat_request.query[:30]
 
     # chat conversation
     chat_conversation = [{"question": chat_request.query, "answer": answer}]
 
-    chat_id = await chat_model.create_chat(Chat(
-        chat_project_id= project.id,
-        chat_user_id= ObjectId(chat_request.user_id),
-        chat_title= chat_title,
-        chat_history=chat_history,
-        chat_conversation= chat_conversation,
-        updatedAt=datetime.utcnow()
-    ))
+    # create chat
+    ## if not guest
+    if not chat_request.is_guest:
+        chat_id = await chat_model.create_chat(Chat(
+            chat_project_id= project.id,
+            chat_user_id= ObjectId(chat_request.user_id),
+            is_guest_chat= False,
+            chat_title= chat_title,
+            chat_history=chat_history,
+            chat_conversation= chat_conversation,
+            updatedAt=datetime.utcnow()
+        ))
+    ## if guest
+    else:
+        chat_id = await chat_model.create_chat(Chat(
+            chat_project_id= project.id,
+            is_guest_chat= True,
+            chat_title= chat_title,
+            chat_history=chat_history,
+            chat_conversation= chat_conversation,
+            updatedAt=datetime.utcnow(),
+            expiresAt=datetime.utcnow() + timedelta(seconds=request.app.guest_chat_TTL)
+        ))
+
 
     if not answer:
         return JSONResponse(
@@ -124,12 +142,16 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
     print(f"chat_id: {chat_id}")
 
     # update chat history
-    res = await chat_model.update_chat_history_and_conversation(
+    _ = await chat_model.update_chat_history_and_conversation(
         chat_id= ObjectId(chat_id),
         chat_history=chat_history,
         question= chat_request.query,
         answer = answer
     )
+
+    # if guest update expiry  
+    if chat_request.is_guest:
+        _ = await chat_model.update_chat_expiry(chat_id= ObjectId(chat_id), TTL = request.app.guest_chat_TTL)
 
     # return response
     if not answer:

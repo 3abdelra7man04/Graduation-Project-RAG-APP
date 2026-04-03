@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { translations } from "../utils/languages";
 
 const ChatBox = () => {
-    const { messages, sendPrompt, theme, user, chats, setSelectChat, getChatMessages, selectChat, language } = useAppContext();
+    const { messages, sendPrompt, theme, user, chats, setSelectChat, getChatMessages, selectChat, language, token } = useAppContext();
     const { chatId } = useParams();
     const navigate = useNavigate();
     const [input, setInput] = useState("");
@@ -26,18 +26,22 @@ const ChatBox = () => {
 
     // منطق الـ Routing والتحقق من الـ ChatId
     useEffect(() => {
-        if (chatId && chats && chats.length > 0) {
-            if (!selectChat || selectChat._id !== chatId) {
-                const matched = chats.find(c => c._id === chatId);
-                if (matched) {
-                    setSelectChat(matched);
-                    getChatMessages(chatId);
-                } else {
-                    navigate('/app');
+        if (chatId) {
+            if (!token) {
+                navigate('/app', { replace: true });
+            } else if (chats && chats.length > 0) {
+                if (!selectChat || selectChat._id !== chatId) {
+                    const matched = chats.find(c => c._id === chatId);
+                    if (matched) {
+                        setSelectChat(matched);
+                        getChatMessages(chatId);
+                    } else {
+                        navigate('/app');
+                    }
                 }
             }
         }
-    }, [chatId, chats]);
+    }, [chatId, chats, token, navigate]);
 
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,7 +57,7 @@ const ChatBox = () => {
         const newChatId = await sendPrompt(text);
         setLoading(false);
 
-        if (newChatId) {
+        if (newChatId && token) {
             navigate(`/app/c/${newChatId}`);
         }
     };
