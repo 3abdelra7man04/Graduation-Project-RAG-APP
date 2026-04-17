@@ -108,5 +108,9 @@ class CoHereProvider(LLMInterface):
         if not response or not response.text:
              self.logger.error("error while generating text using CoHere provider")
         
+        # handle usage tokens
+        prompt_tokens = response.meta.tokens.input_tokens
+        completion_tokens = response.meta.tokens.output_tokens
+
         # return the resposne
-        return response.text
+        return response.text, prompt_tokens, completion_tokens

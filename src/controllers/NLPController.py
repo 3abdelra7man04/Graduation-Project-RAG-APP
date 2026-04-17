@@ -100,7 +100,7 @@ class NLPController(BaseController):
         full_prompt = "".join([document_prompts, footer_prompt])
 
         # get answer
-        answer = self.generation_client.generate_text(
+        answer, prompt_tokens, completion_tokens = self.generation_client.generate_text(
             prompt = full_prompt, chat_history = chat_history, 
         )
 
@@ -112,4 +112,4 @@ class NLPController(BaseController):
             )
         )
 
-        return answer, full_prompt, chat_history
+        return answer, full_prompt, chat_history, prompt_tokens, completion_tokens

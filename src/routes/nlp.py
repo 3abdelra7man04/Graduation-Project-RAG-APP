@@ -188,7 +188,7 @@ async def answer_rag(request: Request, project_id: str, search_request: SearchRe
                                    vectordb_client= request.app.vectordb_client,
                                    template_parser=request.app.template_parser)
     
-    answer, full_prompt, chat_history = nlp_controller.answer_rag_questions(project, query = search_request.query, limit=search_request.limit)
+    answer, full_prompt, chat_history, prompt_tokens, completion_tokens = nlp_controller.answer_rag_questions(project, query = search_request.query, limit=search_request.limit)
 
     if not answer:
         return JSONResponse(
@@ -200,6 +200,8 @@ async def answer_rag(request: Request, project_id: str, search_request: SearchRe
         status_code=status.HTTP_200_OK,
         content={"signal": ResponseSignal.RAG_ANSWER_SUCCESS.value,
                  "answer": answer,
+                 "prompt tokens": prompt_tokens,
+                 "completion tokens": completion_tokens,
                  "full_prompt": full_prompt,
                  "chat_history": chat_history}
     )

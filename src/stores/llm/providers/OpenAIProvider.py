@@ -101,6 +101,11 @@ class OpenAIProvider(LLMInterface):
         if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message:
              self.logger.error("error while generating text using OpenAI provider")
         
-        # return the resposne
-        return response.choices[0].message.content
+        generated_text = response.choices[0].message.content
+
+        # handle usage tokens
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
         
+        # return the answer and tokens
+        return generated_text, prompt_tokens, completion_tokens
