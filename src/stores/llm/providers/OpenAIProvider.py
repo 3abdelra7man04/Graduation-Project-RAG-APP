@@ -26,6 +26,7 @@ class OpenAIProvider(LLMInterface):
         self.enums = OPENAIEnum
         
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
     
     def set_embedding_model(self, model_id: str, embedding_size: int):
         self.embedding_model_id = model_id
@@ -47,7 +48,7 @@ class OpenAIProvider(LLMInterface):
             return None
 
         # get response and validate it
-        response = self.client.embeddings.create(input= text, model= self.embedding_model_id)
+        response = self.client.embeddings.create(input= self.process_prompt(text), model= self.embedding_model_id)
 
         if not response or not response.data or len(response.data) == 0 or not response.data[0].embedding :
             self.logger.error("error while embedding text using OpenAI provider")
