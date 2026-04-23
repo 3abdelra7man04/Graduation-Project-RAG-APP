@@ -7,7 +7,7 @@ class ChatRequest(BaseModel):
     user_id: Optional[str]
     is_guest: bool = False
     query: str
-    limit: Optional[int] = 3
+    limit: Optional[int] = 10
 
 class RenameChatRequest(BaseModel):
 
