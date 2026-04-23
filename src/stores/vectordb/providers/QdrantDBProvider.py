@@ -2,7 +2,9 @@ from ..vectordb_interface import VectordbInterface
 from ..vectordb_enums import DistanceMethodsEnums
 import logging
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
+from qdrant_client.models import Distance, PointStruct, VectorParams, SparseVectorParams, SparseIndexParams, Modifier
+import uuid
+from qdrant_client.models import Document, Prefetch, FusionQuery, Fusion
 from ..schemes.retrieved_documents import RetrievedDocuments
 class QdrantDBProvider(VectordbInterface):
     
@@ -44,7 +46,7 @@ class QdrantDBProvider(VectordbInterface):
         self.logger.error(f"cannot find collection of name : {collection_name}")
         return False
 
-    # create collection
+    # create collection for hybrid search (dense + sparse)
     def create_collection(self, collection_name, embedding_size, do_reset = False):
         
         if do_reset:
@@ -53,8 +55,10 @@ class QdrantDBProvider(VectordbInterface):
         # if collection does not exist
         if not self.does_collection_exist(collection_name):
             self.client.create_collection(collection_name = collection_name,
-                                          vectors_config = VectorParams(size= embedding_size,
-                                                                                     distance=self.distance_method))
+                                          vectors_config = {"dense": VectorParams(size= embedding_size,
+                                                                                     distance=self.distance_method)},
+                                          sparse_vectors_config = {"sparse": SparseVectorParams(index = SparseIndexParams(on_disk = False), 
+                                                                                     modifier = Modifier.IDF)})
 
             return True
         
@@ -73,7 +77,7 @@ class QdrantDBProvider(VectordbInterface):
             self.logger.error(f"cannot find collection of name : {collection_name}")
             return False
         
-        # insert vectors
+        # insert vectors (dense and sparse (bm25 model))
         for i in range(0, len(embedding_texts), batch_size):
             batch_end = i + batch_size
 
@@ -84,7 +88,9 @@ class QdrantDBProvider(VectordbInterface):
             try:
                 self.client.upsert(collection_name= collection_name,
                                 wait=True,
-                                points= [PointStruct(id= i + j, vector=batch_embedding_vectors[j],
+                                points= [PointStruct(id= uuid.uuid4().hex, vector= {"dense": batch_embedding_vectors[j],
+                                                                         "sparse": Document(text=batch_embedding_texts[j],
+                                                                                            model="qdrant/bm25")},
                                                     payload={
                                                         "text": batch_embedding_texts[j],
                                                         "metadata": batch_metadatas[j]
@@ -97,17 +103,31 @@ class QdrantDBProvider(VectordbInterface):
         
         return True
     
-    def search_vectors(self, collection_name: str, query_vector: list, limit: int):
+    def search_vectors(self, collection_name: str, query_text: str, query_vector: list, limit: int):
         # check collection existence
         if not self.does_collection_exist(collection_name= collection_name):
             self.logger.error(f"cannot find collection of name : {collection_name}")
             return None
         
         results =  self.client.query_points(collection_name= collection_name,
-                                            query=query_vector, limit=limit).points
+                                            prefetch=[
+                                                        # Sub-query 1: Semantic search
+                                                        Prefetch(
+                                                            query=query_vector,
+                                                            using="dense",
+                                                            limit= 4*limit
+                                                        ),
+                                                        # Sub-query 2: Keyword search
+                                                        Prefetch(
+                                                            query= Document(text=query_text, model="qdrant/bm25"),
+                                                            using="sparse",
+                                                            limit= 4*limit
+                                                        )
+                                                    ],
+                                            query=FusionQuery(fusion=Fusion.RRF), limit=limit).points
         
         if not results:
-            self.logger.error(f"serch error : {collection_name}")
+            self.logger.error(f"search error : {collection_name}")
             return None
         
         return [RetrievedDocuments(**{

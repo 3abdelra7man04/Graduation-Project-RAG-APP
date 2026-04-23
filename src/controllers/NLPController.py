@@ -61,7 +61,8 @@ class NLPController(BaseController):
         query_vector = self.embedding_client.embed_text(text = query, document_type = DocumentTypeEnum.QUERY.value)
 
         # search in vectordb
-        response = self.vectordb_client.search_vectors(collection_name = collection_name, query_vector = query_vector, limit = limit)
+        response = self.vectordb_client.search_vectors(collection_name = collection_name,query_text = query,
+                                                       query_vector = query_vector, limit = limit)
 
         return response
     
@@ -71,7 +72,7 @@ class NLPController(BaseController):
         retrieved_documents = self.search_in_vectordb(Project=Project, query=query, limit=limit)
 
         if not retrieved_documents:
-            return None
+            return None, None, None, None, None
         
         # construct llm prompt
         ## check chat_history
@@ -88,9 +89,9 @@ class NLPController(BaseController):
         document_prompts = "\n".join([
             self.template_parser.get("rag", "document_prompt", {
                 "doc_num": i+1,
-                "chunk_text": docuemnt.text
+                "chunk_text": document.text
             })
-            for i, docuemnt in enumerate(retrieved_documents)
+            for i, document in enumerate(retrieved_documents)
         ])
 
         footer_prompt = self.template_parser.get("rag", "footer_prompt", {"query": query})

@@ -15,3 +15,4 @@ poppler_utils==0.1.0
 pydantic[email]==2.12.5
 cohere==5.20.7
 qdrant-client==1.17.1
+fastembed==0.8.0
