@@ -1,6 +1,5 @@
-# Graduation Project RAG APP
-
-This is a minimal implementation of the RAG model for question answering.
+# UNIASK
+UNIASK is a RAG-Based application that provides a conversational interface for university documentation. by answering student queries directly using the given university resources.  
 
 ## Requirements
 
