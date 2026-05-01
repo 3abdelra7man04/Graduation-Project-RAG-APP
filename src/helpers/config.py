@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     EXTRACTION_BACKEND: str
     GENERATION_BACKEND: str
     EMBEDDING_BACKEND: str
+    RERANKING_BACKEND: str
 
     OPENAI_API_KEY: str
     OPENAI_API_URL: str
@@ -33,6 +34,7 @@ class Settings(BaseSettings):
     GENERATION_MODEL_ID: str = None
     EMBEDDING_MODEL_ID: str = None
     EMBEDDING_MODEL_SIZE: int = None
+    RERANKING_MODEL_ID: str = None
 
     EXTRACTION_MAX_OUTPUT_TOKENS: int = None
     INPUT_MAX_CHARACTERS: int = None
@@ -42,6 +44,7 @@ class Settings(BaseSettings):
 
     # ---------------------- VectorDB Config ----------------------
     VECTOR_DB_BACKEND: str 
+    VECTOR_DB_URL: str
     VECTOR_DB_PATH: str
     VECTOR_DB_DISTANCE_METHOD: str
 

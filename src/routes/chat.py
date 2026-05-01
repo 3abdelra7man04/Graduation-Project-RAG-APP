@@ -44,7 +44,8 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
     nlp_controller = NLPController(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
-                                   template_parser=request.app.template_parser)
+                                   template_parser=request.app.template_parser,
+                                   reranking_client= request.app.reranking_client)
     
     answer, full_prompt, chat_history, *_ = nlp_controller.answer_rag_questions(project, query = chat_request.query, limit=chat_request.limit)
 
@@ -122,7 +123,8 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
     nlp_controller = NLPController(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
-                                   template_parser=request.app.template_parser)
+                                   template_parser=request.app.template_parser,
+                                   reranking_client= request.app.reranking_client)
     
     # chat model
     chat_model = await ChatModel.create_instance(db_client)

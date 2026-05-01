@@ -19,6 +19,50 @@ nlp_router = APIRouter(
     tags=["api_v1", "nlp"],
 )
 
+@nlp_router.delete("/index/delete/{project_id}")
+async def index_project_delete(request: Request, project_id: str):
+    
+    # get projects collection or create it
+    db_client = request.app.db_client  # get the db_client
+
+    project_model = await ProjectModel.create_instance(
+        db_client=db_client
+    )  # create the ProjectModel instance
+
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
+    # project not found
+    if not project:
+        return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
+            )
+    
+    # nlp_controller instance
+    nlp_controller = NLPController(generation_client= request.app.generation_client,
+                                   embedding_client=request.app.embedding_client,
+                                   vectordb_client= request.app.vectordb_client,
+                                   template_parser=request.app.template_parser)
+    
+    # get chunks of project on batches and then index them
+    is_deleted = nlp_controller.reset_vectordb_collection(Project=project)
+
+    if not is_deleted:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "signal": ResponseSignal.VECTOR_DB_INDEXING_ERROR.value
+            }
+        )
+    
+    
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "signal": ResponseSignal.VECTOR_DB_INDEXING_SUCCESS.value,
+        }
+    )
 
 @nlp_router.post("/index/push/{project_id}")
 async def index_project(request: Request, project_id: str, push_request: PushRequest):
@@ -52,6 +96,10 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
     page_num = 1
     inserted_chunks_count = 0
 
+    if push_request.do_reset:
+        nlp_controller.reset_vectordb_collection(Project = project)
+        print("RESET DONE")
+
     while True:
 
         # get chunks
@@ -63,7 +111,7 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
             break
         
         # index them into vector db
-        is_inserted = nlp_controller.index_into_vectordb(Project=project, chunks=chunks, do_reset = push_request.do_reset)
+        is_inserted = nlp_controller.index_into_vectordb(Project=project, chunks=chunks)
 
         if not is_inserted:
             return JSONResponse(
@@ -147,7 +195,8 @@ async def search_in_index(request: Request, project_id: str, search_request: Sea
     nlp_controller = NLPController(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
-                                   template_parser=request.app.template_parser)
+                                   template_parser=request.app.template_parser,
+                                   reranking_client=request.app.reranking_client)
     
     results = nlp_controller.search_in_vectordb(Project= project, query= search_request.query, limit= search_request.limit)
 
@@ -160,7 +209,7 @@ async def search_in_index(request: Request, project_id: str, search_request: Sea
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"signal": ResponseSignal.VECTOR_DB_SEARCH_SUCCESS.value,
-                 "response": [res.model_dump() for res in results]}
+                 "response": [res for res in results]}
     )
 
 @nlp_router.post("/index/answer/{project_id}")
@@ -186,7 +235,8 @@ async def answer_rag(request: Request, project_id: str, search_request: SearchRe
     nlp_controller = NLPController(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
-                                   template_parser=request.app.template_parser)
+                                   template_parser=request.app.template_parser,
+                                   reranking_client=request.app.reranking_client)
     
     answer, full_prompt, chat_history, prompt_tokens, completion_tokens = nlp_controller.answer_rag_questions(project, query = search_request.query, limit=search_request.limit)
 

@@ -31,6 +31,9 @@ class CoHereProvider(LLMInterface):
         self.embedding_model_id = model_id
         self.embedding_size = embedding_size
     
+    def set_reranking_model(self, model_id: str):
+        self.reranking_model_id = model_id
+    
     def set_generation_model(self, model_id: str):
         self.generation_model_id = model_id
     
@@ -66,6 +69,38 @@ class CoHereProvider(LLMInterface):
         # return the response after validation
         return response.embeddings.float[0]
     
+    def rerank(self, query: str, documents: list, limit: int):
+        # validate if there is an cohere client
+        if not self.client:
+            self.logger.error("CoHere Client was not set")
+            return None
+
+        # validate if there is a reranking model id
+        if not self.reranking_model_id:
+            self.logger.error("CoHere Reranking model was not set")
+            return None
+
+        # get response and validate it
+        response = self.client.rerank(
+            model = self.reranking_model_id,
+            documents = documents,
+            query = query,
+            top_n= limit
+        )
+
+        if not response or not response.results:
+            self.logger.error("Error while reranking documents with CoHere")
+            return None
+        
+        ranked_results = []
+        for res in response.results:
+            ranked_results.append({
+                "text": documents[res.index],  # Use index to find the text
+                "score": res.relevance_score   
+            })
+        
+        # return the reranked documents
+        return ranked_results
     
     def process_prompt(self, prompt: str):
         

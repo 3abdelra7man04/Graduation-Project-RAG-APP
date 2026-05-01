@@ -33,6 +33,10 @@ async def startup_db_client():
     app.embedding_client = llm_factory.create_provider_instance(provider_name = settings.EMBEDDING_BACKEND)
     app.embedding_client.set_embedding_model(model_id = settings.EMBEDDING_MODEL_ID, embedding_size = settings.EMBEDDING_MODEL_SIZE)
 
+    # create llm reranker client
+    app.reranking_client = llm_factory.create_provider_instance(provider_name = settings.RERANKING_BACKEND)
+    app.reranking_client.set_reranking_model(model_id = settings.RERANKING_MODEL_ID)
+    
     # create vector db client
     vectordb_factory = VectordbFactory(settings= settings)
     app.vectordb_client = vectordb_factory.create_provider_instance(provider=settings.VECTOR_DB_BACKEND)
@@ -47,6 +51,7 @@ async def startup_db_client():
 # mongo connection shutdown
 async def shutdown_db_client():
     app.mongo_connection.close()
+    app.vectordb_client.close()
 
 app.on_event("startup")(startup_db_client)
 app.on_event("shutdown")(shutdown_db_client)
