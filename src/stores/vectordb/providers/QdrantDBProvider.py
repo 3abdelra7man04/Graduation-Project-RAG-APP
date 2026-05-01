@@ -9,12 +9,12 @@ from ..schemes.retrieved_documents import RetrievedDocuments
 class QdrantDBProvider(VectordbInterface):
     
     # constructor
-    def __init__(self, db_path: str, distance_method: str):
+    def __init__(self, db_url: str, distance_method: str):
         super().__init__()
 
-        self.db_path = db_path
+        self.db_url = db_url
 
-        self.client = QdrantClient(path = db_path)
+        self.client = QdrantClient(url = db_url)
 
         # cosine distance
         if distance_method == DistanceMethodsEnums.COSINE.value:
@@ -41,13 +41,20 @@ class QdrantDBProvider(VectordbInterface):
     # delete collection
     def delete_collection(self, collection_name):
         if self.does_collection_exist(collection_name):
-            return self.client.delete_collection(collection_name=collection_name)
+            try:
+                # Try to completely drop the collection
+                return self.client.delete_collection(collection_name=collection_name)
+            except Exception as e:
+                # On Windows, deleting the collection folder might throw PermissionError due to file locks.
+                # Fallback: keep the collection but delete all points inside it.
+                self.logger.warning(f"Failed to delete collection {collection_name} fully, falling back to clearing points. Error: {e}")
+                return False
 
         self.logger.error(f"cannot find collection of name : {collection_name}")
         return False
 
     # create collection for hybrid search (dense + sparse)
-    def create_collection(self, collection_name, embedding_size, do_reset = False):
+    def create_collection(self, collection_name, embedding_size, do_reset):
         
         if do_reset:
             self.delete_collection(collection_name)
@@ -66,11 +73,15 @@ class QdrantDBProvider(VectordbInterface):
         return False
     
     def insert_vectors(self, collection_name: str, embedding_texts: list, embedding_vectors: list,
-                         metadatas: list = None, batch_size: int = 50):
+                         metadatas: list = None, chunk_ids: list = None, batch_size: int = 50):
 
         # handle none metadata
         if metadatas is None:
             metadatas = [None] * len(embedding_texts)
+            
+        # handle none chunk_ids
+        if chunk_ids is None:
+            chunk_ids = [uuid.uuid4().hex for _ in range(len(embedding_texts))]
         
         # check collection existence
         if not self.does_collection_exist(collection_name= collection_name):
@@ -84,11 +95,12 @@ class QdrantDBProvider(VectordbInterface):
             batch_embedding_texts = embedding_texts[i:batch_end]
             batch_embedding_vectors = embedding_vectors[i:batch_end]
             batch_metadatas = metadatas[i:batch_end]
+            batch_chunk_ids = chunk_ids[i:batch_end]
             
             try:
                 self.client.upsert(collection_name= collection_name,
                                 wait=True,
-                                points= [PointStruct(id= uuid.uuid4().hex, vector= {"dense": batch_embedding_vectors[j],
+                                points= [PointStruct(id= uuid.uuid5(uuid.NAMESPACE_OID, str(batch_chunk_ids[j])).hex, vector= {"dense": batch_embedding_vectors[j],
                                                                          "sparse": Document(text=batch_embedding_texts[j],
                                                                                             model="qdrant/bm25")},
                                                     payload={
@@ -115,13 +127,13 @@ class QdrantDBProvider(VectordbInterface):
                                                         Prefetch(
                                                             query=query_vector,
                                                             using="dense",
-                                                            limit= 4*limit
+                                                            limit= limit
                                                         ),
                                                         # Sub-query 2: Keyword search
                                                         Prefetch(
                                                             query= Document(text=query_text, model="qdrant/bm25"),
                                                             using="sparse",
-                                                            limit= 4*limit
+                                                            limit= limit
                                                         )
                                                     ],
                                             query=FusionQuery(fusion=Fusion.RRF), limit=limit).points
