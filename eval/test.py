@@ -11,17 +11,23 @@ from tqdm import tqdm
 
 start_time = time.perf_counter()
 
-dataset = load_dataset("csv", data_files="datasets/moqararat_derasia.csv")
+datasets_entries = os.listdir("datasets")
+
 TEST_DATA = []
 
-for i in range(len(dataset["train"])):
-    TEST_DATA.append(
-        {"question": dataset["train"]["question"][i],
-        "expected": dataset["train"]["expected"][i]}
+for entry in datasets_entries:
+
+    dataset = load_dataset("csv", data_files = "datasets/" + entry)
+    
+    for i in range(len(dataset["train"])):
+        TEST_DATA.append(
+            {"question": dataset["train"]["question"][i],
+            "expected": dataset["train"]["expected"][i]}
     )
 
 test_results = pd.DataFrame(TEST_DATA)
 
+print("Dataset is created")
 
 os.environ["OPENAI_API_KEY"] = "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"
 
@@ -138,7 +144,7 @@ async def main():
             print(f"{col} AVG = {avg}")
     
     # save test results as csv
-    test_version = 1
+    test_version = 2
     final_df.to_csv(f"tests/test_results_v{test_version}.csv", encoding="utf-8-sig", index=False)
     print(f"Test duration = {time.perf_counter() - start_time}")
 

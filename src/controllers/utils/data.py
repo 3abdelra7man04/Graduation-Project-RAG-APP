@@ -1,8 +1,6 @@
 import os
 from os.path import join
-import random
-
-
+from json_repair import repair_json
 from glob import glob
 from pdf2image import convert_from_path
 from PIL import Image, ImageEnhance
@@ -123,7 +121,14 @@ def extract_pages(file_path,  output_base_dir, max_width = 600, dpi = 200):
         )
 
         # Extract the assistant message with reasoning_details
-        response = json.loads(response.choices[0].message.content)
+        try:
+          response = json.loads(response.choices[0].message.content)
+        except json.JSONDecodeError as e:
+            print(f"Detected broken JSON, attempting repair... page:{page_num}")
+            repaired_string = repair_json(response.choices[0].message.content)
+            response = json.loads(repaired_string)
+            raise e
+        
 
         # add the source, file path, page, total_pages metadata
         response["metadata"]["source"] = file_path
