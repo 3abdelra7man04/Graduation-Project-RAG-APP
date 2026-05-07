@@ -40,7 +40,7 @@ client = AsyncOpenAI(
     api_key=os.environ["OPENAI_API_KEY"]
 )
 
-factory = RAGEvaluatorFactory(client, "google/gemini-3-flash-preview", "openai/text-embedding-3-large")
+factory = RAGEvaluatorFactory(client, "anthropic/claude-3-haiku", "openai/text-embedding-3-large")
 evaluator = factory.create_evalautor_instance("ragas")
 
 
@@ -50,7 +50,7 @@ async def test_rag_api(data):
         "http://localhost:5000/api/v1/nlp/index/search/0", 
         json = {
                     "query": data["question"],
-                    "limit": 3
+                    "limit": 10
                }
     ).json()
     
@@ -59,7 +59,7 @@ async def test_rag_api(data):
         "http://localhost:5000/api/v1/nlp/index/answer/0", 
         json = {
                     "query": data["question"],
-                    "limit": 3
+                    "limit": 10
                }
     ).json()
 
@@ -144,7 +144,7 @@ async def main():
             print(f"{col} AVG = {avg}")
     
     # save test results as csv
-    test_version = 2
+    test_version = 5
     final_df.to_csv(f"tests/test_results_v{test_version}.csv", encoding="utf-8-sig", index=False)
     print(f"Test duration = {time.perf_counter() - start_time}")
 
