@@ -15,7 +15,7 @@ class RAGASEvaluator(RAGEvaluatorInterface):
     def __init__(self, client_instance, evaluator_llm_model: str, evaluator_embedding_model: str):
 
         self.evaluator_llm = llm_factory(model= evaluator_llm_model, 
-                                         client = client_instance, max_tokens = 4096)
+                                         client = client_instance, max_tokens = 8192)
 
         self.evaluator_embedder = embedding_factory(model= evaluator_embedding_model,
                                                     client = client_instance)
