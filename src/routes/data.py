@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request
+from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
@@ -22,6 +22,49 @@ data_router = APIRouter(
     prefix="/api/v1/data",
     tags=["api_v1", "data"],
 )
+
+# Background task for file processing
+async def process_files_background(project_id: str, project_files_ids: dict, chunk_size: int, chunk_overlap: int, db_client):
+    try:
+        # create Process Controller object
+        process_cotroller = ProcessController(project_id=project_id)
+        chunk_model = await ChunkModel.create_instance(db_client=db_client)
+
+        for asset_id, file_id in project_files_ids.items():
+            # get file content
+            file_content = process_cotroller.get_file_content(file_id)
+
+            if file_content is None:
+                logger.error(f"Error while processing file: {file_id}")
+                continue
+
+            # get file chunks
+            file_chunks = process_cotroller.process_file_content(
+                file_id=file_id,
+                file_content=file_content,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+            )
+
+            # if an error occurs skip to next
+            if file_chunks is None or len(file_chunks) == 0:
+                continue
+
+            file_chunks_records = [
+                DataChunk(
+                    chunk_text=chunk.page_content,
+                    chunk_metadata=chunk.metadata,
+                    chunk_order=i + 1,
+                    chunk_project_id=project_id,
+                    chunk_asset_id=asset_id,
+                )
+                for i, chunk in enumerate(file_chunks)
+            ]
+
+            await chunk_model.add_many_chunks(data_chunks=file_chunks_records)
+
+    except Exception as e:
+        logger.error(f"Background processing failed: {e}")
 
 
 # upload endpoint
@@ -102,6 +145,7 @@ async def process_endpoint(
     request: Request,  # the reqeust object has the app and its data
     project_id: str,
     process_request: ProcessRequest,
+    background_tasks: BackgroundTasks, # Add background tasks
 ):
 
     # get projects collection or create it
@@ -116,9 +160,6 @@ async def process_endpoint(
     chunk_size = process_request.chunk_size
     chunk_overlap = process_request.chunk_overlap
     do_reset = process_request.do_reset
-
-    project_model = await ProjectModel.create_instance(db_client=request.app.db_client)
-    project = await project_model.get_project_or_create_one(project_id=project_id)
 
     asset_model = await AssetModel.create_instance(db_client=request.app.db_client)
 
@@ -154,60 +195,24 @@ async def process_endpoint(
             },
         )
 
-    # create Process Controller object
-    process_cotroller = ProcessController(project_id=project_id)
-
-    no_records = 0
-    no_files = 0
-
     chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
 
     if do_reset == True:
         _ = await chunk_model.delete_chunks_by_project_id(project_id=project.id)
 
-    for asset_id, file_id in project_files_ids.items():
-        # get file content
-        file_content = process_cotroller.get_file_content(file_id)
-
-        if file_content is None:
-            logger.error(f"Error while processing file: {file_id}")
-            continue
-
-        # get file chunks
-        file_chunks = process_cotroller.process_file_content(
-            file_id=file_id,
-            file_content=file_content,
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-        )
-
-        # if an  error occurs return 400 status code
-        if file_chunks is None or len(file_chunks) == 0:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={"signal": ResponseSignal.PROCESSING_FAILED.value},
-            )
-
-        file_chunks_records = [
-            DataChunk(
-                chunk_text=chunk.page_content,
-                chunk_metadata=chunk.metadata,
-                chunk_order=i + 1,
-                chunk_project_id=project.id,
-                chunk_asset_id=asset_id,
-            )
-            for i, chunk in enumerate(file_chunks)
-        ]
-
-        chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
-
-        no_records += await chunk_model.add_many_chunks(data_chunks=file_chunks_records)
-        no_files += 1
+    # Delegate processing to background
+    background_tasks.add_task(
+        process_files_background,
+        project_id=project.id,
+        project_files_ids=project_files_ids,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        db_client=db_client
+    )
 
     return JSONResponse(
+        status_code=status.HTTP_202_ACCEPTED,
         content={
             "signal": ResponseSignal.PROCESSING_SUCCESS.value,
-            "inserted_chunks": no_records,
-            "processed_files": no_files,
         }
     )

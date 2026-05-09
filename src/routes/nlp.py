@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request
+from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
@@ -18,6 +18,38 @@ nlp_router = APIRouter(
     prefix="/api/v1/nlp",
     tags=["api_v1", "nlp"],
 )
+
+# Background task for indexing chunks to avoid blocking
+async def background_indexing_task(project, chunk_model, nlp_controller, do_reset: bool):
+    try:
+        if do_reset:
+            nlp_controller.reset_vectordb_collection(Project=project)
+            print("RESET DONE")
+
+        page_num = 1
+        inserted_chunks_count = 0
+
+        while True:
+            # get chunks
+            chunks = await chunk_model.get_chunks_from_project(project_id=project.id, page_num=page_num)
+
+            if len(chunks):
+                page_num += 1
+            else:
+                break
+            
+            # index them into vector db
+            is_inserted = nlp_controller.index_into_vectordb(Project=project, chunks=chunks)
+
+            if not is_inserted:
+                logger.error(f"Vector DB Indexing Error for project {project.id}")
+                break
+            
+            inserted_chunks_count += len(chunks)
+            
+    except Exception as e:
+        logger.error(f"Background indexing failed for project {project.id}: {e}")
+
 
 @nlp_router.delete("/index/delete/{project_id}")
 async def index_project_delete(request: Request, project_id: str):
@@ -54,8 +86,6 @@ async def index_project_delete(request: Request, project_id: str):
                 "signal": ResponseSignal.VECTOR_DB_INDEXING_ERROR.value
             }
         )
-    
-    
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -65,7 +95,12 @@ async def index_project_delete(request: Request, project_id: str):
     )
 
 @nlp_router.post("/index/push/{project_id}")
-async def index_project(request: Request, project_id: str, push_request: PushRequest):
+async def index_project(
+    request: Request, 
+    project_id: str, 
+    push_request: PushRequest,
+    background_tasks: BackgroundTasks
+):
     
     # get projects collection or create it
     db_client = request.app.db_client  # get the db_client
@@ -92,42 +127,20 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
                                    vectordb_client= request.app.vectordb_client,
                                    template_parser=request.app.template_parser)
     
-    # get chunks of project on batches and then index them
-    page_num = 1
-    inserted_chunks_count = 0
-
-    if push_request.do_reset:
-        nlp_controller.reset_vectordb_collection(Project = project)
-        print("RESET DONE")
-
-    while True:
-
-        # get chunks
-        chunks = await chunk_model.get_chunks_from_project(project_id=project.id, page_num=page_num)
-
-        if len(chunks):
-            page_num+=1
-        else:
-            break
-        
-        # index them into vector db
-        is_inserted = nlp_controller.index_into_vectordb(Project=project, chunks=chunks)
-
-        if not is_inserted:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "signal": ResponseSignal.VECTOR_DB_INDEXING_ERROR.value
-                }
-            )
-        
-        inserted_chunks_count+=len(chunks)
+    # Delegate indexing to background task
+    background_tasks.add_task(
+        background_indexing_task,
+        project=project,
+        chunk_model=chunk_model,
+        nlp_controller=nlp_controller,
+        do_reset=push_request.do_reset
+    )
 
     return JSONResponse(
-        status_code=status.HTTP_200_OK,
+        status_code=status.HTTP_202_ACCEPTED,
         content={
             "signal": ResponseSignal.VECTOR_DB_INDEXING_SUCCESS.value,
-            "inserted_chunks_count": inserted_chunks_count
+            "message": "Indexing started in background"
         }
     )
 
@@ -255,4 +268,3 @@ async def answer_rag(request: Request, project_id: str, search_request: SearchRe
                  "full_prompt": full_prompt,
                  "chat_history": chat_history}
     )
-    
