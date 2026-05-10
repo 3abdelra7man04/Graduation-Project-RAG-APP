@@ -69,7 +69,7 @@ async def test_rag_api(data):
     # 3. Extract the components
     
     actual_output = answer_response["answer"]
-    retrieval_context = [res["text"] for res in search_response["response"]]
+    retrieval_context = [res["text"] for res in search_response["response"][0]]
 
     # 4. Use RAGASEvaluator to compute metrics
     context_precision_val = await evaluator.context_precision_score(
