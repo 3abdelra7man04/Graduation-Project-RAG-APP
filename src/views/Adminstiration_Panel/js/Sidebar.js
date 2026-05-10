@@ -44,15 +44,16 @@ const Sidebar = ({ page, setPage, t, theme, language, content }) => {
       >
         <p
           style={{
-            fontSize: "24px",
+            fontFamily: "'Outfit', sans-serif",
+            fontSize: "36px",
             fontWeight: "900",
-            letterSpacing: "-1.5px",
+            letterSpacing: "-0.05em",
             margin: 0,
             display: "flex",
             alignItems: "center",
           }}
         >
-          <span style={{ color: isDark ? "#ffffff" : "#121212" }}>Uni</span>
+          <span style={{ color: isDark ? "#ffffff" : "#1f2937" }}>Uni</span>
           <span
             style={{
               background: "linear-gradient(to right, #1A9BB3, #3D81F6)",
