@@ -1,5 +1,4 @@
 from .BaseController import BaseController
-from helpers.config import get_settings
 from models.db_schemes import Project
 from models.db_schemes import DataChunk
 from stores.llm.llm_enums import DocumentTypeEnum
@@ -72,6 +71,29 @@ class NLPController(BaseController):
 
         return is_inserted
     
+    # generate an HyDE
+    def generate_hypothetical_document(self, query: str):
+
+        system_prompt = self.generation_client.construct_prompt(
+                                prompt = self.template_parser.get("HyDE", "system_prompt"),
+                                role = self.generation_client.enums.SYSTEM.value 
+                            )
+        
+        document_prompt = self.template_parser.get("HyDE", "document_prompt")
+
+        footer_prompt = self.template_parser.get("HyDE", "footer_prompt", {"query": query})
+
+        "".join([document_prompt, footer_prompt])
+
+        HyDE_prompt = "".join([document_prompt, footer_prompt])
+        
+        HyDE, HyDE_prompt_tokens, HyDE_completion_tokens = self.generation_client.generate_text(
+            prompt = HyDE_prompt, chat_history = [system_prompt], 
+        )
+
+        return HyDE, HyDE_prompt_tokens, HyDE_completion_tokens
+
+    
     def search_in_vectordb(self, Project: Project, query: str, limit: int):
 
         # get collection name
@@ -80,22 +102,32 @@ class NLPController(BaseController):
         # embed query
         query_vector = self.embedding_client.embed_text(text = query, document_type = DocumentTypeEnum.QUERY.value)
 
+        # get HyDE
+        HyDE, HyDE_prompt_tokens, HyDE_completion_tokens = self.generate_hypothetical_document(query=query)
+
+        # embed HyDE
+        HyDE_vector = self.embedding_client.embed_text(text = query, document_type = DocumentTypeEnum.DOCUMENT.value)
+
         # search in vectordb
         retrieved_documents = self.vectordb_client.search_vectors(collection_name = collection_name,
-                                                                  query_text = query,
-                                                                  query_vector = query_vector, limit= 5*limit)
+                                                                  query_text = query, HyDE = HyDE,
+                                                                  query_vector = query_vector, HyDE_vector = HyDE_vector,
+                                                                  limit= 5*limit)
 
         # rerank
         reranked_documents = self.reranking_client.rerank(query = query,
                                                           documents = [document.text for document
                                                                       in retrieved_documents],
                                                           limit = limit)
-        return reranked_documents
+        
+        # return documents and tokens used while searching
+        return reranked_documents, HyDE_prompt_tokens, HyDE_completion_tokens
     
     def answer_rag_questions(self, Project: Project, query: str, limit: int, chat_history: list[dict] = None):
 
         # retrieve documents
-        retrieved_documents = self.search_in_vectordb(Project=Project, query=query, limit=limit)
+        retrieved_documents, search_prompt_tokens, search_completion_tokens = self.search_in_vectordb(Project=Project,
+                                                                                                      query=query, limit=limit)
 
         if not retrieved_documents:
             return None, None, None, None, None
@@ -127,7 +159,7 @@ class NLPController(BaseController):
         full_prompt = "".join([document_prompts, footer_prompt])
 
         # get answer
-        answer, prompt_tokens, completion_tokens = self.generation_client.generate_text(
+        answer, answer_prompt_tokens, answer_completion_tokens = self.generation_client.generate_text(
             prompt = full_prompt, chat_history = chat_history, 
         )
 
@@ -139,4 +171,7 @@ class NLPController(BaseController):
             )
         )
 
-        return answer, full_prompt, chat_history, prompt_tokens, completion_tokens
+        total_prompt_tokens = search_prompt_tokens + answer_prompt_tokens
+        total_completion_tokens = search_completion_tokens + answer_completion_tokens
+
+        return answer, full_prompt, chat_history, total_prompt_tokens, total_completion_tokens

@@ -28,6 +28,6 @@ class VectordbInterface(ABC):
         pass
 
     @abstractmethod
-    def search_vectors(self, collection_name: str,query_text: str,
-                       query_vector: list, limit: int) -> list[RetrievedDocuments]:
+    def search_vectors(self, collection_name: str, query_text: str, HyDE: str,
+                       query_vector: list, HyDE_vector: list, limit: int) -> list[RetrievedDocuments]:
         pass

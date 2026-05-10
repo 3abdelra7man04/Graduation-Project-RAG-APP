@@ -115,7 +115,8 @@ class QdrantDBProvider(VectordbInterface):
         
         return True
     
-    def search_vectors(self, collection_name: str, query_text: str, query_vector: list, limit: int):
+    def search_vectors(self, collection_name: str, query_text: str, HyDE: str, 
+                       query_vector: list, HyDE_vector: list, limit: int):
         # check collection existence
         if not self.does_collection_exist(collection_name= collection_name):
             self.logger.error(f"cannot find collection of name : {collection_name}")
@@ -123,18 +124,30 @@ class QdrantDBProvider(VectordbInterface):
         
         results =  self.client.query_points(collection_name= collection_name,
                                             prefetch=[
-                                                        # Sub-query 1: Semantic search
+                                                        # query : Semantic search
                                                         Prefetch(
                                                             query=query_vector,
                                                             using="dense",
                                                             limit= limit
                                                         ),
-                                                        # Sub-query 2: Keyword search
+                                                        # query : Keyword search
                                                         Prefetch(
                                                             query= Document(text=query_text, model="qdrant/bm25"),
                                                             using="sparse",
                                                             limit= limit
-                                                        )
+                                                        ),
+                                                        # HyDE : Semantic search
+                                                        Prefetch(
+                                                            query=HyDE_vector,
+                                                            using="dense",
+                                                            limit= limit
+                                                        ),
+                                                        # HyDE : Keyword search
+                                                        Prefetch(
+                                                            query= Document(text=HyDE, model="qdrant/bm25"),
+                                                            using="sparse",
+                                                            limit= limit
+                                                        ),
                                                     ],
                                             query=FusionQuery(fusion=Fusion.RRF), limit=limit).points
         

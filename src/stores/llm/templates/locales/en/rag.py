@@ -27,6 +27,8 @@ system_prompt = Template("\n".join([
     
     "If the provided context does not contain enough information to answer confidently, respond naturally without hallucinating or inventing facts.",
     
+    "If an statement in the answer feels uncomplete don't put it",
+    
     "Do not mention retrieved documents, embeddings, vector databases, retrieval systems, or backend implementation details.",
     
     "Act naturally, as if you already know the information.",
