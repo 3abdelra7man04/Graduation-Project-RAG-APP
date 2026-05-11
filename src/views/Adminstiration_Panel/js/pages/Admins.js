@@ -290,19 +290,17 @@ const AdminsPage = ({ t, theme }) => {
                     >
                       <Icon.Edit size={16} />
                     </button>
-                    {a.id !== 1 && (
-                      <button
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "#ff4d4f",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => removeAdmin(a.id)}
-                      >
-                        <Icon.Trash size={16} />
-                      </button>
-                    )}
+                    <button
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#ff4d4f",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => removeAdmin(a.id)}
+                    >
+                      <Icon.Trash size={16} />
+                    </button>
                   </div>
                 </td>
               </tr>
