@@ -33,10 +33,9 @@ class AssetModel(BaseDataModel):
 
         return asset
 
-    async def get_all_project_assets(self, asset_project_id: str, asset_type):
+    async def get_all_project_assets(self, asset_project_id: str):
         records = await self.collection.find({
             "asset_project_id": ObjectId(asset_project_id) if isinstance(asset_project_id, str) else asset_project_id,
-            "asset_type": asset_type,
         }).to_list(length=None)
 
 
@@ -56,3 +55,12 @@ class AssetModel(BaseDataModel):
             return Asset(**record)
 
         return None
+    
+    async def update_asset_status(self, asset_id: str, new_status: str):
+
+        result = await self.db_client.assets.update_one(
+        {"_id": ObjectId(asset_id)},
+        {"$set": {"asset_status": new_status}})
+
+        return result
+    

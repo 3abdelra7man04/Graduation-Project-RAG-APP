@@ -12,6 +12,9 @@ class Asset(BaseModel):
     asset_size: int = Field(ge=0, default=None)
     asset_config: dict = Field(default=None)
     asset_pushed_at: datetime = Field(default=datetime.utcnow)
+    asset_status: str
+    asset_uploader_admin_id: Optional[ObjectId] = None
+    asset_uploader_admin_name: str
 
     class Config:
         arbitrary_types_allowed = True

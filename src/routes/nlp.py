@@ -1,6 +1,5 @@
 from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request
 from fastapi.responses import JSONResponse
-import os
 from helpers.config import get_settings, Settings
 import logging
 from .schemes.nlp import PushRequest, SearchRequest

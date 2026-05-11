@@ -2,4 +2,5 @@ from enum import Enum
 
 
 class AssetTypeEnum(Enum):
-    FILE = "file"
+    PDF = "PDF"
+    TEXT = "TXT"
