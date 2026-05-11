@@ -2,6 +2,7 @@ export const translations = {
   en: {
     minia: "Minia",
     university: "University",
+    college: "College of Engineering",
     newChat: "New Chat",
     search: "Search chats...",
     welcomeHi: "Hi",
@@ -17,6 +18,7 @@ export const translations = {
   ar: {
     minia: "المنيا",
     university: "جامعة",
+    college: "كلية الهندسة",
     newChat: "محادثة جديدة",
     search: "البحث في المحادثات...",
     welcomeHi: "أهلاً",

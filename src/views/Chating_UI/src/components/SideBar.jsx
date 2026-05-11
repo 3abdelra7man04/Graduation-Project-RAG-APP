@@ -114,6 +114,9 @@ const SideBar = ({ isMenuOpen, setIsMenuOpen, setShowAuthOverlay }) => {
                 {language === 'ar' ? content.minia : content.university}
               </span>
             </p>
+            <p className="text-[10px] font-bold tracking-wide uppercase text-gray-500 mt-0.5">
+              {content.college}
+            </p>
           </div>
         </div>
 

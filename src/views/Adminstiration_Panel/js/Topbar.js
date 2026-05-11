@@ -37,7 +37,7 @@ const Topbar = ({ title, dark, setDark, lang, setLang, theme }) => {
 
       <div
         className="topbar-right"
-        style={{ display: "flex", alignItems: "center", gap: "20px" }}
+        style={{ display: "flex", alignItems: "center", gap: "20px", direction: "ltr" }}
       >
         {/* Dark / light mode toggle */}
         <div
