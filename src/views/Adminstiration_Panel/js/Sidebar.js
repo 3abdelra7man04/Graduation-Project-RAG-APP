@@ -51,6 +51,7 @@ const Sidebar = ({ page, setPage, t, theme, language, content }) => {
             margin: 0,
             display: "flex",
             alignItems: "center",
+            direction: "ltr",
           }}
         >
           <span style={{ color: isDark ? "#ffffff" : "#1f2937" }}>Uni</span>
