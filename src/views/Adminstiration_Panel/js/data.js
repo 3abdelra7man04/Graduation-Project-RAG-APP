@@ -13,10 +13,8 @@ const INIT_DOCS = [
 
 // BACKEND: GET /api/admins → replace with real fetch
 const INIT_ADMINS = [
-  { id: 1, name: 'Alex Johnson',  email: 'alex@company.com',   role: 'Super Admin', status: 'active',   lastLogin: '2 minutes ago', color: '#2a85ff' },
-  { id: 2, name: 'Maria Garcia',  email: 'maria@company.com',  role: 'Admin',       status: 'active',   lastLogin: '1 hour ago',    color: '#00c896' },
-  { id: 3, name: 'Sam Lee',       email: 'sam@company.com',    role: 'Editor',      status: 'active',   lastLogin: '3 hours ago',   color: '#faad14' },
-  { id: 4, name: 'Jordan Kim',    email: 'jordan@company.com', role: 'Viewer',      status: 'inactive', lastLogin: '2 days ago',    color: '#9b59b6' },
+  { id: 1, name: 'Abdelrahman Ahmed',  email: 'abdelrahman@company.com',   role: 'Admin',       status: 'inactive', lastLogin: 'yesterday',    color: '#ff4d4f' },
+  { id: 2, name: 'Abanoub Wagih',     email: 'abanoub@company.com',       role: 'Super Admin', status: 'active',   lastLogin: 'just now', color: '#2a85ff' },
 ];
 
 // File-type badge colours used in the Knowledge Base table
