@@ -204,8 +204,6 @@ body {
 [dir="rtl"] .main    { margin-left: 0; margin-right: 230px; }
 [dir="rtl"] .nav-item { flex-direction: row-reverse; }
 [dir="rtl"] .user-card { flex-direction: row-reverse; }
-[dir="rtl"] .topbar  { flex-direction: row-reverse; }
-[dir="rtl"] .topbar-right { flex-direction: row-reverse; }
 [dir="rtl"] .theme-toggle { flex-direction: row-reverse; }
 [dir="rtl"] .card-header { flex-direction: row-reverse; }
 [dir="rtl"] .stat-card  { text-align: right; }
