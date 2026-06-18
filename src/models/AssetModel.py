@@ -63,4 +63,12 @@ class AssetModel(BaseDataModel):
         {"$set": {"asset_status": new_status}})
 
         return result
+
+    async def delete_asset_by_id(self, asset_id: str):
+
+        result = await self.collection.delete_one({
+            "_id": ObjectId(asset_id) if isinstance(asset_id, str) else asset_id
+        })
+
+        return result
     

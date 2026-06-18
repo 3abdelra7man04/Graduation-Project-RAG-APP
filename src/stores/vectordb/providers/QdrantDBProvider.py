@@ -53,6 +53,49 @@ class QdrantDBProvider(VectordbInterface):
         self.logger.error(f"cannot find collection of name : {collection_name}")
         return False
 
+    # delete indices of a specific file from the collection
+    def delete_file_indices(self, collection_name: str, chunk_ids: list):
+        """
+        Delete all vector points belonging to a specific file from a Qdrant collection.
+        
+        Args:
+            collection_name: Name of the Qdrant collection.
+            chunk_ids: List of MongoDB chunk _id strings associated with the file.
+                       These are converted to the same uuid5 hex used during insertion.
+        
+        Returns:
+            True if deletion succeeded, False otherwise.
+        """
+        if not self.does_collection_exist(collection_name):
+            self.logger.error(f"cannot find collection of name : {collection_name}")
+            return False
+
+        if not chunk_ids or len(chunk_ids) == 0:
+            self.logger.warning("No chunk IDs provided for deletion.")
+            return False
+
+        # Convert MongoDB chunk IDs to the Qdrant point IDs
+        # (same formula used in insert_vectors)
+        point_ids = [
+            uuid.uuid5(uuid.NAMESPACE_OID, str(cid)).hex
+            for cid in chunk_ids
+        ]
+
+        try:
+            self.client.delete(
+                collection_name=collection_name,
+                points_selector=point_ids,
+            )
+            self.logger.info(
+                f"Deleted {len(point_ids)} points from collection '{collection_name}'"
+            )
+            return True
+        except Exception as e:
+            self.logger.error(
+                f"Error deleting file indices from {collection_name}: {e}"
+            )
+            return False
+
     # create collection for hybrid search (dense + sparse)
     def create_collection(self, collection_name, embedding_size, do_reset):
         

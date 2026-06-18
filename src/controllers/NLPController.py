@@ -70,6 +70,26 @@ class NLPController(BaseController):
                                                 embedding_vectors = vectors, metadatas = metadatas, chunk_ids = chunk_ids)
 
         return is_inserted
+
+    # delete a certain file indices from vectordb
+    async def delete_file_from_vectordb(self, Project: Project, file_chunks: list[DataChunk]):
+        
+        # get collection name
+        collection_name = self.create_collection_name(project_id=Project.project_id)
+        
+        if not file_chunks:
+            return False
+
+        # extract chunk IDs as strings
+        chunk_ids = [str(chunk.id) for chunk in file_chunks]
+
+        # 1. delete vectors from Qdrant
+        qdrant_deleted = self.vectordb_client.delete_file_indices(
+            collection_name=collection_name, 
+            chunk_ids=chunk_ids
+        )
+
+        return qdrant_deleted
     
     # generate an HyDE
     def generate_hypothetical_document(self, query: str):

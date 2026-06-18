@@ -73,4 +73,20 @@ class ChunkModel(BaseDataModel):
         })
 
         return result.deleted_count
+
+    # get all chunks belonging to a specific asset (file)
+    async def get_chunks_by_asset_id(self, asset_id: ObjectId):
+        documents = await self.collection.find({
+            "chunk_asset_id": asset_id
+        }).to_list(length=None)
+
+        return [DataChunk(**document) for document in documents]
+
+    # delete chunks by asset_id and return how many were deleted
+    async def delete_chunks_by_asset_id(self, asset_id: ObjectId):
+        result = await self.collection.delete_many({
+            "chunk_asset_id": asset_id
+        })
+
+        return result.deleted_count
     

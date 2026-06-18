@@ -19,6 +19,10 @@ class VectordbInterface(ABC):
         pass
 
     @abstractmethod
+    def delete_file_indices(self, collection_name: str, chunk_ids: list):
+        pass
+
+    @abstractmethod
     def create_collection(self, collection_name: str, embedding_size: int, do_reset: bool = False):
         pass
 

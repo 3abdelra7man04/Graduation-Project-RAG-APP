@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request, BackgroundTasks
+from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request, BackgroundTasks, Form
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
@@ -116,11 +116,14 @@ async def upload_data(
     request: Request,  # the reqeust object has the app and its data
     project_id: str,
     file: UploadFile,
-    process_request: ProcessRequest,
-    upload_request: UploadRequest,
-    background_tasks: BackgroundTasks,
+    process_request: str = Form(...),   # received as a JSON string from multipart form
+    upload_request: str = Form(...),    # received as a JSON string from multipart form
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     app_settings: Settings = Depends(get_settings),
 ):
+    # Parse the JSON strings into the Pydantic models
+    process_request: ProcessRequest = ProcessRequest.model_validate_json(process_request)
+    upload_request: UploadRequest   = UploadRequest.model_validate_json(upload_request)
 
     # get projects collection or create it
     db_client = request.app.db_client  # get the db_client
@@ -214,6 +217,110 @@ async def upload_data(
             "file_type": asset_record.asset_type,
             "file_uploading_time": str(asset_record.asset_pushed_at)
         }
+    )
+
+@data_router.delete("/delete/{project_id}/{asset_id}")
+async def delete_uploaded_file(request: Request, project_id: str, asset_id: str):
+    import shutil
+    import glob
+
+    # get projects collection or create it
+    db_client = request.app.db_client  # get the db_client
+
+    project_model = await ProjectModel.create_instance(
+        db_client=db_client
+    )  # create the ProjectModel instance
+
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
+    # project not found
+    if not project:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
+        )
+    
+    # chat model instance
+    asset_model = await AssetModel.create_instance(db_client)
+
+    # get asset record first to get its info
+    asset_record = await asset_model.collection.find_one({"_id": ObjectId(asset_id)})
+    
+    if not asset_record:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.FILE_ID_ERROR.value},
+        )
+
+    # chunk model instance
+    chunk_model = await ChunkModel.create_instance(db_client)
+
+    # get all chunks belonging to this file/asset first (to extract file path from metadata if needed)
+    file_chunks = await chunk_model.get_chunks_by_asset_id(asset_id=ObjectId(asset_id))
+
+    # delete indices of the file from Qdrant vector DB
+    nlp_controller = NLPController(
+        generation_client=request.app.generation_client,
+        embedding_client=request.app.embedding_client,
+        vectordb_client=request.app.vectordb_client,
+        template_parser=request.app.template_parser
+    )
+    
+    try:
+        await nlp_controller.delete_file_from_vectordb(
+            Project=project,
+            file_chunks=file_chunks
+        )
+    except Exception as e:
+        logger.error(f"Error while deleting file indices from vector DB: {e}")
+
+    # delete chunks from chunks collection
+    try:
+        await chunk_model.delete_chunks_by_asset_id(asset_id=ObjectId(asset_id))
+    except Exception as e:
+        logger.error(f"Error while deleting chunks from database: {e}")
+
+    # delete file from filesystem
+    asset_name = asset_record.get("asset_name")
+    project_dir_path = ProjectController().get_project_path(project_id=project_id)
+    
+    file_path = None
+    if file_chunks:
+        first_chunk = file_chunks[0]
+        file_path = first_chunk.chunk_metadata.get("file_path") or first_chunk.chunk_metadata.get("source")
+
+    # fallback: search by name pattern in project directory if chunk metadata wasn't available
+    if (not file_path or not os.path.exists(file_path)) and asset_name:
+        cleaned_file_name = DataController().get_clean_file_name(orig_file_name=asset_name)
+        matching_files = glob.glob(os.path.join(project_dir_path, f"*_{cleaned_file_name}"))
+        if matching_files:
+            file_path = matching_files[0]
+
+    # delete the file and any associated images folder
+    if file_path and os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+            # if PDF, check and remove corresponding converted images directory
+            if asset_record.get("asset_type") == "pdf" or file_path.lower().endswith(".pdf"):
+                pdf_dir_name = os.path.splitext(os.path.basename(file_path))[0]
+                pdf_images_dir = os.path.join(project_dir_path, pdf_dir_name)
+                if os.path.exists(pdf_images_dir) and os.path.isdir(pdf_images_dir):
+                    shutil.rmtree(pdf_images_dir)
+        except Exception as e:
+            logger.error(f"Error while deleting file {file_path} from filesystem: {e}")
+
+    # delete asset from db
+    result = await asset_model.delete_asset_by_id(asset_id=asset_id)
+
+    if not result:
+        return JSONResponse(
+            status_code= status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.DELETE_CHAT_ERROR.value}
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"signal": ResponseSignal.DELETE_CHAT_SUCCESS.value}
     )
 
 @data_router.get("/list/{project_id}")
