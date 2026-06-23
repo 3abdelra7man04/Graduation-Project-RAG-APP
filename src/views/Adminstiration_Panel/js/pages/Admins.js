@@ -1,12 +1,38 @@
 // ── Admins — manage admin users, roles, and invite new members ────────────
 
-const AdminsPage = ({ t, theme }) => {
-  const { useState } = React;
+const AdminsPage = ({ t, theme, user }) => {
+  const { useState, useEffect } = React;
   const isDark = theme === "dark";
 
-  const [admins, setAdmins] = useState(INIT_ADMINS);
+  const [admins, setAdmins] = useState([]);
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", role: "Viewer" });
+
+  useEffect(() => {
+    if (!user || !user.projectId) return;
+    const fetchAdmins = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/v1/admin/${user.projectId}/list`);
+        if (res.ok) {
+          const data = await res.json();
+          const colors = ["#1A9BB3", "#3D81F6", "#25A9C2", "#5294FF", "#158296"];
+          const formatted = (data.all_admins || []).map((a, i) => ({
+            id: a._id,
+            name: a.admin_name,
+            email: a.admin_email,
+            role: a.admin_role,
+            status: a.admin_status || "active",
+            lastLogin: a.admin_last_login && a.admin_last_login !== "None" ? new Date(a.admin_last_login).toLocaleString() : "Never",
+            color: colors[i % colors.length],
+          }));
+          setAdmins(formatted);
+        }
+      } catch (err) {
+        console.error("Failed to list admins", err);
+      }
+    };
+    fetchAdmins();
+  }, [user]);
 
   const primaryColor = "#1A9BB3";
   const secondaryColor = "#3D81F6";

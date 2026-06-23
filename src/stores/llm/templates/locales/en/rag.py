@@ -24,6 +24,8 @@ system_prompt = Template("\n".join([
     "Ignore documents or context that are not relevant to the user's question.",
     
     "Combine the retrieved information with your general knowledge when appropriate.",
+
+    "if you think that the chat history is non releveant to the current query don't use it",
     
     "If the provided context does not contain enough information to answer confidently, respond naturally without hallucinating or inventing facts.",
     

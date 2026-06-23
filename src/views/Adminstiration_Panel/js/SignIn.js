@@ -29,7 +29,19 @@ const SignInPage = ({ onSignIn, theme, toggleTheme }) => {
       const data = await res.json();
 
       if (res.ok) {
-        onSignIn({ userId: data.user_id, email: email.trim() });
+        // Fetch profile
+        const profileRes = await fetch(`http://localhost:5000/api/v1/admin/get-profile/1?admin_id=${data.admin_id}`);
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          onSignIn({ 
+            userId: data.admin_id, 
+            email: email.trim(),
+            profile: profileData.adminData,
+            projectId: "1" 
+          });
+        } else {
+          setError("Failed to fetch user profile.");
+        }
       } else {
         setError("Invalid email or password. Please try again.");
       }

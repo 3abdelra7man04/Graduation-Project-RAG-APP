@@ -1,4 +1,4 @@
-const Sidebar = ({ page, setPage, t, theme, language, content }) => {
+const Sidebar = ({ page, setPage, t, theme, language, user, onSignOut }) => {
   const isDark = theme === "dark";
   const primaryColor = "#1A9BB3";
   const secondaryColor = "#3D81F6";
@@ -146,22 +146,42 @@ const Sidebar = ({ page, setPage, t, theme, language, content }) => {
               fontWeight: "bold",
             }}
           >
-            AJ
+            {user?.profile?.admin_name ? user.profile.admin_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'AD'}
           </div>
-          <div style={{ overflow: "hidden" }}>
+          <div style={{ overflow: "hidden", flex: 1 }}>
             <div
               className="user-name"
-              style={{ fontSize: "13px", fontWeight: "bold" }}
+              style={{ fontSize: "13px", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
             >
-              Abanoub Wagih
+              {user?.profile?.admin_name || 'Administrator'}
             </div>
             <div
               className="user-role"
               style={{ fontSize: "11px", color: "#9ca3af" }}
             >
-              {t("seniorRagAdmin")}
+              {user?.profile?.admin_role || t("seniorRagAdmin")}
             </div>
           </div>
+          <button
+            onClick={onSignOut}
+            title="Sign Out"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#ef4444",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "4px"
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
         </div>
       </div>
     </aside>

@@ -29,6 +29,14 @@ class ResponseSignal(Enum):
     PROFILE_FOUND = "profile found successfully"
     PROFILE_NOT_FOUND = "profile not found"
 
+    # ---------------------- admin signals ----------------------
+    ADMIN_REGISTER_SUCCESS = "admin successfully registered"
+    ADMIN_LOGIN_SUCCESS = "admin login success"
+    ADMIN_LOGIN_FAILED = "admin login failed"
+    ADMIN_PROFILE_FOUND = "admin profile found successfully"
+    ADMIN_PROFILE_NOT_FOUND = "admin profile not found"
+    LIST_ADMINS_SUCCESS = "admins are successfully listed"
+    LIST_ADMINS_ERROR = "error in listing admins"
     # ---------------------- vector db signals ----------------------
     VECTOR_DB_INDEXING_ERROR = "error when inserting in vector db"
     VECTOR_DB_INDEXING_SUCCESS = "vectordb indexing success"

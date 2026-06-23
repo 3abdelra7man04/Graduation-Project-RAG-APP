@@ -4,8 +4,7 @@ const App = () => {
   const { useState, useEffect } = React;
 
   // ── Auth state ────────────────────────────────────────────────────────
-  // null = not signed in  |  { userId, email } = signed in
-  const [user, setUser] = useState({ userId: "dev", email: "admin@university.edu" });
+  const [user, setUser] = useState(null);
 
   // ── UI state ──────────────────────────────────────────────────────────
   const [page, setPage] = useState("dashboard");
@@ -53,7 +52,7 @@ const App = () => {
   };
 
   const renderPage = () => {
-    const props = { t, lang, theme, language };
+    const props = { t, lang, theme, language, user };
     switch (page) {
       case "dashboard": return <DashboardPage {...props} />;
       case "knowledge": return <KnowledgePage {...props} />;
