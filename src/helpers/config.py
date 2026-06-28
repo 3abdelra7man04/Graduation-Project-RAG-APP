@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     EMBEDDING_BACKEND: str
     RERANKING_BACKEND: str
 
+    OPENROUTER_API_KEY: str
     OPENAI_API_KEY: str
     OPENAI_API_URL: str
     COHERE_API_KEY: str
@@ -51,6 +52,9 @@ class Settings(BaseSettings):
     # ---------------------- Template Config ----------------------
     PRIMARY_LANG: str
     DEFAULT_LANG: str
+
+    # ---------------------- Agent Config ----------------------
+    AGENT_MODEL: str
 
     class Config():
         env_file = ".env"       # .env path described for the BaseSettings class

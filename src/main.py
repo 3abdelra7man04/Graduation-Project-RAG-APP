@@ -1,4 +1,7 @@
 # import libraries
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from routes import base, data, user, nlp, chat, admin
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -7,6 +10,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from stores.llm.LLMFactory import LLMFactory
 from stores.vectordb.vectordbFactory import VectordbFactory
 from stores.llm.templates.template_parser import TemplateParser
+from pydantic_ai import Agent, ModelSettings
+from agents.dependencies import AgentDeps
+from agents.tools import save_failed_query, semantic_search
 
 # fastAPI app
 app = FastAPI()
@@ -44,6 +50,15 @@ async def startup_db_client():
     # template parser
     template_parser = TemplateParser(language=settings.PRIMARY_LANG, default_language=settings.DEFAULT_LANG)
     app.template_parser = template_parser
+
+    # agent instance
+    app.agent_client = Agent(
+        model = settings.AGENT_MODEL,
+        deps_type= AgentDeps,
+        system_prompt= template_parser.get("agent", "system_prompt"),
+        tools=[save_failed_query, semantic_search],
+        model_settings= ModelSettings(temperature=0.3)
+    )
 
     # guest chat TTL
     app.guest_chat_TTL = settings.CHAT_DOCUMENT_TTL

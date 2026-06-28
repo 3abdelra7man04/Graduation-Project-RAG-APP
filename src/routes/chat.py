@@ -5,11 +5,27 @@ import logging
 from .schemes.chat import ChatRequest, RenameChatRequest
 from models.ProjectModel import ProjectModel
 from models.ChatModel import ChatModel
+from models.FailedQueriesModel import FailedQueriesModel
 from models.enums.ResponseEnums import ResponseSignal
 from controllers import NLPController
 from models.db_schemes.chat import Chat
 from datetime import datetime, timedelta
+from agents.dependencies import AgentDeps
+from pydantic import TypeAdapter
+from pydantic_ai.messages import ModelMessage
+from pydantic_ai.messages import ToolReturnPart, ToolCallPart, ModelResponse
 
+def print_tools_called_with_results(result):
+    print("\n=== TOOL TRACE ===\n")
+
+    for msg in result.all_messages():
+        if isinstance(msg, ModelResponse):
+            for part in msg.parts:
+                if isinstance(part, ToolCallPart):
+                    print(f"[CALL] {part.tool_name} -> {part.args}")
+
+                elif isinstance(part, ToolReturnPart):
+                    print(f"[RETURN] {part.tool_name} -> {part.content}")
 
 # Uvicorn logger instance
 logger = logging.getLogger("uvicorn.error")
@@ -47,7 +63,30 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
                                    template_parser=request.app.template_parser,
                                    reranking_client= request.app.reranking_client)
     
-    answer, full_prompt, chat_history, *_ = nlp_controller.answer_rag_questions(project, query = chat_request.query, limit=chat_request.limit)
+    # failed queries model
+    failed_queries_model = await FailedQueriesModel.create_instance(db_client)
+
+    # answer, full_prompt, chat_history, *_ = nlp_controller.answer_rag_questions(project, query = chat_request.query, limit=chat_request.limit)
+    
+    # run agent
+    result = await request.app.agent_client.run(
+        user_prompt=chat_request.query,
+        deps=AgentDeps(
+            nlp_controller=nlp_controller,
+            project=project,
+            failed_queries_model= failed_queries_model,
+            template_parser=request.app.template_parser,
+            limit=chat_request.limit
+        )
+    )
+
+    print_tools_called_with_results(result)
+    
+    # agent answer
+    answer = result.output
+    
+    # agent chat history using adapter
+    chat_history = TypeAdapter(list).dump_python(result.all_messages(), mode='json')
 
     # chat model
     chat_model = await ChatModel.create_instance(db_client)
@@ -126,6 +165,9 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
                                    template_parser=request.app.template_parser,
                                    reranking_client= request.app.reranking_client)
     
+    # failed queries model
+    failed_queries_model = await FailedQueriesModel.create_instance(db_client)
+    
     # chat model
     chat_model = await ChatModel.create_instance(db_client)
 
@@ -136,11 +178,36 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
 
     
     # get answer
-    answer, full_prompt, chat_history, *_ = nlp_controller.answer_rag_questions(project, query = chat_request.query,
-                                                                            limit=chat_request.limit,
-                                                                            chat_history = chat_history)
+    # answer, full_prompt, chat_history, *_ = nlp_controller.answer_rag_questions(project, query = chat_request.query,
+    #                                                                         limit=chat_request.limit,
+    #                                                                         chat_history = chat_history)
 
     
+    
+    # parse db dicts back into pydantic-ai message objects
+    parsed_chat_history = TypeAdapter(list[ModelMessage]).validate_python(chat_history)
+
+    # run agent
+    result = await request.app.agent_client.run(
+        user_prompt=chat_request.query,
+        deps=AgentDeps(
+            nlp_controller=nlp_controller,
+            project=project,
+            failed_queries_model= failed_queries_model,
+            template_parser=request.app.template_parser,
+            limit=chat_request.limit
+        ),
+        message_history=parsed_chat_history
+    )
+
+    print_tools_called_with_results(result)
+    
+    # agent answer
+    answer = result.output
+    
+    # agent chat history using adapter
+    chat_history = TypeAdapter(list).dump_python(result.all_messages(), mode='json')
+
     print(f"chat_id: {chat_id}")
 
     # update chat history
