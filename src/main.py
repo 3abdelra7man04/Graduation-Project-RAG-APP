@@ -12,7 +12,7 @@ from stores.vectordb.vectordbFactory import VectordbFactory
 from stores.llm.templates.template_parser import TemplateParser
 from pydantic_ai import Agent, ModelSettings
 from agents.dependencies import AgentDeps
-from agents.tools import save_failed_query, semantic_search
+from agents.tools import semantic_search
 
 # fastAPI app
 app = FastAPI()
@@ -56,7 +56,7 @@ async def startup_db_client():
         model = settings.AGENT_MODEL,
         deps_type= AgentDeps,
         system_prompt= template_parser.get("agent", "system_prompt"),
-        tools=[save_failed_query, semantic_search],
+        tools=[semantic_search],
         model_settings= ModelSettings(temperature=0.3)
     )
 

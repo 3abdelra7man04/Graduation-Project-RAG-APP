@@ -5,7 +5,6 @@ import logging
 from .schemes.chat import ChatRequest, RenameChatRequest
 from models.ProjectModel import ProjectModel
 from models.ChatModel import ChatModel
-from models.FailedQueriesModel import FailedQueriesModel
 from models.enums.ResponseEnums import ResponseSignal
 from controllers import NLPController
 from models.db_schemes.chat import Chat
@@ -62,9 +61,6 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
                                    vectordb_client= request.app.vectordb_client,
                                    template_parser=request.app.template_parser,
                                    reranking_client= request.app.reranking_client)
-    
-    # failed queries model
-    failed_queries_model = await FailedQueriesModel.create_instance(db_client)
 
     # answer, full_prompt, chat_history, *_ = nlp_controller.answer_rag_questions(project, query = chat_request.query, limit=chat_request.limit)
     
@@ -74,7 +70,6 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
         deps=AgentDeps(
             nlp_controller=nlp_controller,
             project=project,
-            failed_queries_model= failed_queries_model,
             template_parser=request.app.template_parser,
             limit=chat_request.limit
         )
@@ -165,9 +160,6 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
                                    template_parser=request.app.template_parser,
                                    reranking_client= request.app.reranking_client)
     
-    # failed queries model
-    failed_queries_model = await FailedQueriesModel.create_instance(db_client)
-    
     # chat model
     chat_model = await ChatModel.create_instance(db_client)
 
@@ -193,7 +185,6 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
         deps=AgentDeps(
             nlp_controller=nlp_controller,
             project=project,
-            failed_queries_model= failed_queries_model,
             template_parser=request.app.template_parser,
             limit=chat_request.limit
         ),

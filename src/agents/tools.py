@@ -1,8 +1,6 @@
 from pydantic_ai import RunContext
 from agents.dependencies import AgentDeps
-from models.db_schemes.failed_query import FailedQuery
 from datetime import datetime
-
 
 async def semantic_search(ctx: RunContext[AgentDeps], query: str) -> str:
     """
@@ -51,30 +49,3 @@ async def semantic_search(ctx: RunContext[AgentDeps], query: str) -> str:
         return f"Error during semantic search: {str(e)}"
 
 
-async def save_failed_query(ctx: RunContext[AgentDeps], query_text: str) -> str:
-    """
-    Flag and save a user's query for the administration team to review when the 
-    retrieved documents do not contain enough information to answer it.
-
-    Args:
-        ctx: The runtime context containing agent dependencies.
-        query_text: The original user question that lacked useful answers in the documents.
-    """
-    if not ctx.deps.failed_queries_model:
-        return "Error: Failed Queries Model is not initialized in dependencies."
-    if not ctx.deps.project:
-        return "Error: Project is not initialized in dependencies."
-        
-    try:
-        failed_query = FailedQuery(
-            failed_query_project_id=ctx.deps.project.id,
-            failed_query=query_text,
-            createdAt=datetime.utcnow(),
-            Resolved= False
-        )
-        
-        await ctx.deps.failed_queries_model.add_failed_query(failed_query)
-        
-        return "Failed query saved successfully."
-    except Exception as e:
-        return f"Error saving failed query: {str(e)}"
