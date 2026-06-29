@@ -2,6 +2,8 @@ from .BaseController import BaseController
 from models.db_schemes import Project
 from models.db_schemes import DataChunk
 from stores.llm.llm_enums import DocumentTypeEnum
+from .schemes.query_classification import QueryClassification
+import json
 
 class NLPController(BaseController):
     def __init__(self, generation_client, embedding_client, vectordb_client, template_parser,
@@ -195,3 +197,35 @@ class NLPController(BaseController):
         total_completion_tokens = search_completion_tokens + answer_completion_tokens
 
         return answer, full_prompt, chat_history, total_prompt_tokens, total_completion_tokens
+
+
+    def classify_query_topic_and_failure(self, query: str, query_answer: str, topic_names: list[str]):
+        
+        # construct llm prompt
+        system_prompt = self.generation_client.construct_prompt(
+                                prompt = self.template_parser.get("query_classification", "system_prompt"),
+                                role = self.generation_client.enums.SYSTEM.value 
+                            )
+        
+        topic_prompt = self.template_parser.get("query_classification", "topic_prompt", {"topic_names": topic_names})
+
+        query_answer_prompt = self.template_parser.get("query_classification", "query_answer_prompt", {
+            "query": query,
+            "answer": query_answer})
+
+        full_prompt = "".join([topic_prompt, query_answer_prompt])
+
+        query_classification, query_classification_prompt_tokens, query_classification_completion_tokens = self.generation_client.generate_json_classification(
+            prompt = full_prompt, chat_history = [system_prompt], scheme = QueryClassification.model_json_schema()
+        )
+
+        query_classification = json.loads(query_classification)
+        query_classification = QueryClassification(**query_classification)
+
+        topic = query_classification.topic
+        failed = query_classification.failed
+        resolved = not failed
+
+        return topic, failed, resolved, query_classification_prompt_tokens, query_classification_completion_tokens
+        
+        

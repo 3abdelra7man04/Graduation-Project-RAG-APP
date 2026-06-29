@@ -34,6 +34,7 @@ async def startup_db_client():
     # create llm generation client
     app.generation_client = llm_factory.create_provider_instance(provider_name = settings.GENERATION_BACKEND)
     app.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
+    app.generation_client.set_classification_model(model_id = settings.CLASSIFICATION_MODEL_ID)
 
     # create llm embedding client
     app.embedding_client = llm_factory.create_provider_instance(provider_name = settings.EMBEDDING_BACKEND)

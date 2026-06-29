@@ -21,6 +21,11 @@ class OpenAIProvider(LLMInterface):
         self.embedding_model_id = None
         self.embedding_size = None
 
+        self.classification_model_id = None
+
+        self.classification_output_max_tokens = generation_output_max_tokens
+        self.classification_temperature = generation_temperature
+
         self.client = OpenAI(api_key= self.api_key, base_url = api_url)
 
         self.enums = OPENAIEnum
@@ -34,6 +39,9 @@ class OpenAIProvider(LLMInterface):
     
     def set_generation_model(self, model_id: str):
         self.generation_model_id = model_id
+    
+    def set_classification_model(self, model_id: str):
+        self.classification_model_id = model_id
     
     def embed_text(self, text: str, document_type: str = None):
         
@@ -110,3 +118,61 @@ class OpenAIProvider(LLMInterface):
         
         # return the answer and tokens
         return generated_text, prompt_tokens, completion_tokens
+
+    def generate_json_classification(self, prompt: str, chat_history: list = None, scheme: dict = None, max_output_tokens: int = None,
+                     temperature: float = None):
+
+        if chat_history is None:
+            chat_history = []
+
+        # validate if there is an OpenAI client
+        if not self.client:
+            self.logger.error("OpenAI Client was not set")
+            return None
+
+        # validate if there is a generation model id
+        if not self.classification_model_id:
+            self.logger.error("OpenAI classification model was not set")
+            return None
+
+        # validate the max output tokens and temperature
+        max_output_tokens = max_output_tokens if max_output_tokens else self.generation_output_max_tokens
+        temperature = temperature if temperature else self.generation_temperature
+
+        # add the new user prompt to the chat history
+        chat_history.append(
+            self.construct_prompt(prompt=prompt, role = OPENAIEnum.USER.value)
+        )
+        
+        response_format = {"type": "json_object"}
+        if scheme:
+            response_format = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "response_schema",
+                    "schema": scheme,
+                    "strict": True
+                }
+            }
+
+        # get response
+        response = self.client.chat.completions.create(
+            model= self.classification_model_id,
+            messages= chat_history,
+            max_tokens= max_output_tokens,
+            temperature= temperature,
+            response_format=response_format
+        )
+
+        # validate the response
+        if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message:
+             self.logger.error("error while generating json using OpenAI provider")
+        
+        generated_json = response.choices[0].message.content
+
+        # handle usage tokens
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
+        
+        # return the answer and tokens
+        return generated_json, prompt_tokens, completion_tokens

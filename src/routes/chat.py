@@ -5,9 +5,11 @@ import logging
 from .schemes.chat import ChatRequest, RenameChatRequest
 from models.ProjectModel import ProjectModel
 from models.ChatModel import ChatModel
+from models.QueryModel import QueryModel
 from models.enums.ResponseEnums import ResponseSignal
 from controllers import NLPController
 from models.db_schemes.chat import Chat
+from models.db_schemes.query import Query
 from datetime import datetime, timedelta
 from agents.dependencies import AgentDeps
 from pydantic import TypeAdapter
@@ -117,7 +119,24 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
             updatedAt=datetime.utcnow(),
             expiresAt=datetime.utcnow() + timedelta(seconds=request.app.guest_chat_TTL)
         ))
+    
+    # update queries
+    topic, failed, resolved, _, _ = nlp_controller.classify_query_topic_and_failure(query = chat_request.query,
+    query_answer=answer, topic_names=["regulations", "curriculum", "courses", "departments", "academic_calendar",
+     "social", "non-relevant", "other"])
 
+    query_model = await QueryModel.create_instance(db_client = db_client)
+
+    _ = await query_model.add_query(Query(
+            query_project_id= project.id,
+            query_chat_id= chat_id,
+            query_user_id= ObjectId(chat_request.user_id),
+            query_text= chat_request.query,
+            query_topic = topic,
+            createdAt = datetime.utcnow(),
+            failed = failed,
+            resolved = resolved,
+        ))
 
     if not answer:
         return JSONResponse(
@@ -213,6 +232,23 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
     if chat_request.is_guest:
         _ = await chat_model.update_chat_expiry(chat_id= ObjectId(chat_id), TTL = request.app.guest_chat_TTL)
 
+    # update queries
+    topic, failed, resolved, _, _ = nlp_controller.classify_query_topic_and_failure(query = chat_request.query,
+    query_answer=answer, topic_names=["regulations", "curriculum", "courses", "departments", "academic_calendar",
+     "social", "non-relevant", "other"])
+
+    query_model = await QueryModel.create_instance(db_client = db_client)
+
+    _ = await query_model.add_query(Query(
+            query_project_id= project.id,
+            query_chat_id= ObjectId(chat_id),
+            query_user_id= ObjectId(chat_request.user_id),
+            query_text= chat_request.query,
+            query_topic = topic,
+            createdAt = datetime.utcnow(),
+            failed = failed,
+            resolved = resolved,
+        ))
     # return response
     if not answer:
         return JSONResponse(

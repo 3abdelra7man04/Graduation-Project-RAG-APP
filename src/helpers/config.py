@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL_ID: str = None
     EMBEDDING_MODEL_SIZE: int = None
     RERANKING_MODEL_ID: str = None
+    CLASSIFICATION_MODEL_ID: str = None
 
     EXTRACTION_MAX_OUTPUT_TOKENS: int = None
     INPUT_MAX_CHARACTERS: int = None
