@@ -92,3 +92,13 @@ class ChatModel(BaseDataModel):
                 }).sort("updatedAt", order).to_list(length = None)
 
         return chats
+
+    async def get_all_chats(self, ascending: bool = False):
+        if ascending == True: 
+            order = 1
+        else:
+            order = -1
+
+        chats = await self.collection.find({}).sort("updatedAt", order).to_list(length = None)
+
+        return chats

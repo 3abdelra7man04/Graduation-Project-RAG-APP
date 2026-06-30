@@ -1,7 +1,7 @@
 // ── Chat Inbox — paginated log of user chats with confidence + feedback ─
 
 const InboxPage = ({ t, lang, theme }) => {
-  const { useState, useMemo } = React;
+  const { useState, useMemo, useEffect } = React;
   const isDark = theme === "dark";
   const primaryColor = "#1A9BB3";
   const secondaryColor = "#3D81F6";
@@ -11,77 +11,21 @@ const InboxPage = ({ t, lang, theme }) => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // BACKEND: GET /api/chats?page=1&limit=20 → paginated chat history
-  const allChats = [
-    {
-      id: "chat-1",
-      title: "Vacation Policy & Password",
-      date: "2026-06-25",
-      time: "10:30 AM",
-      queries: [
-        {
-          id: 1,
-          q: "What is the vacation policy?",
-          qAr: "ما هي سياسة الإجازات؟",
-          answer: "According to Company Policy 2024, employees are entitled to 21 days of paid time off per year, which increases to 30 days after 5 years of service. Please make sure to request time off at least two weeks in advance.",
-          answerAr: "وفقاً لسياسة الشركة 2024، يحق للموظفين الحصول على 21 يوماً من الإجازة مدفوعة الأجر سنوياً، والتي تزيد إلى 30 يوماً بعد 5 سنوات من الخدمة. يرجى التأكد من طلب الإجازة قبل أسبوعين على الأقل.",
-          confidence: 0.94,
-          source: "Company Policy 2024.pdf",
-          time: "10:30 AM",
-          liked: true,
-        },
-        {
-          id: 2,
-          q: "How do I reset my password?",
-          qAr: "كيف أعيد تعيين كلمة المرور؟",
-          answer: "To reset your password, navigate to the portal login page and click 'Forgot Password'. You will receive an email with a secure link to create a new password. The link expires in 15 minutes.",
-          answerAr: "لإعادة تعيين كلمة المرور، انتقل إلى صفحة تسجيل الدخول في البوابة وانقر على 'نسيت كلمة المرور'. ستتلقى بريداً إلكترونياً يحتوي على رابط آمن لإنشاء كلمة مرور جديدة. تنتهي صلاحية الرابط خلال 15 دقيقة.",
-          confidence: 0.88,
-          source: "Onboarding Guide.md",
-          time: "11:15 AM",
-          liked: null,
+  const [allChats, setAllChats] = useState([]);
+  
+  useEffect(() => {
+    fetch("http://localhost:5000/api/v1/chat_inbox/list")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.all_chats) {
+          setAllChats(data.all_chats);
+          if (data.all_chats.length > 0) {
+            setSelectedChatId(data.all_chats[0].id);
+          }
         }
-      ]
-    },
-    {
-      id: "chat-2",
-      title: "Enterprise Billing Options",
-      date: "2026-06-24",
-      time: "02:20 PM",
-      queries: [
-        {
-          id: 3,
-          q: "What are the enterprise billing options?",
-          qAr: "ما هي خيارات الفوترة للمؤسسات؟",
-          answer: "I could not find a confident answer in the available knowledge base regarding enterprise billing options. Please contact the sales team directly for enterprise pricing details.",
-          answerAr: "لم أجد إجابة واثقة في قاعدة المعرفة المتاحة بخصوص خيارات الفوترة للمؤسسات. يرجى الاتصال بفريق المبيعات مباشرة للحصول على تفاصيل أسعار المؤسسات.",
-          confidence: 0.15,
-          source: null,
-          time: "02:20 PM",
-          liked: false,
-        }
-      ]
-    },
-    {
-      id: "chat-3",
-      title: "Code Review Process",
-      date: "2026-06-20",
-      time: "09:00 AM",
-      queries: [
-        {
-          id: 4,
-          q: "Explain the code review process",
-          qAr: "اشرح عملية مراجعة الكود",
-          answer: "The engineering runbook states that all pull requests must be reviewed by at least one senior engineer before merging. The code must pass all CI/CD pipelines, have over 80% test coverage, and address any inline comments.",
-          answerAr: "تنص وثيقة التشغيل الهندسي على أنه يجب مراجعة جميع طلبات السحب بواسطة مهندس أول واحد على الأقل قبل الدمج. يجب أن يمر الكود بجميع مسارات CI/CD، وأن يحقق تغطية اختبار تزيد عن 80%، ويعالج أي تعليقات مضمنة.",
-          confidence: 0.79,
-          source: "Engineering Runbook.txt",
-          time: "09:00 AM",
-          liked: true,
-        }
-      ]
-    }
-  ];
+      })
+      .catch(err => console.error("Error fetching chats:", err));
+  }, []);
 
   // Filtering based on date range
   const filteredChats = useMemo(() => {
@@ -90,7 +34,7 @@ const InboxPage = ({ t, lang, theme }) => {
       if (endDate && c.date > endDate) return false;
       return true;
     });
-  }, [startDate, endDate]);
+  }, [startDate, endDate, allChats]);
 
   const selectedChat = filteredChats.find(c => c.id === selectedChatId) || filteredChats[0];
 
