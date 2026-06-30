@@ -7,7 +7,7 @@ from models.ProjectModel import ProjectModel
 from models.ChatModel import ChatModel
 from models.QueryModel import QueryModel
 from models.enums.ResponseEnums import ResponseSignal
-from controllers import NLPController
+from services import NLPService
 from models.db_schemes.chat import Chat
 from models.db_schemes.query import Query
 from datetime import datetime, timedelta
@@ -57,20 +57,20 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
                 content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
             )
     
-    # nlp_controller instance
-    nlp_controller = NLPController(generation_client= request.app.generation_client,
+    # nlp_service instance
+    nlp_service = NLPService(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
                                    template_parser=request.app.template_parser,
                                    reranking_client= request.app.reranking_client)
 
-    # answer, full_prompt, chat_history, *_ = nlp_controller.answer_rag_questions(project, query = chat_request.query, limit=chat_request.limit)
+    # answer, full_prompt, chat_history, *_ = nlp_service.answer_rag_questions(project, query = chat_request.query, limit=chat_request.limit)
     
     # run agent
     result = await request.app.agent_client.run(
         user_prompt=chat_request.query,
         deps=AgentDeps(
-            nlp_controller=nlp_controller,
+            nlp_service=nlp_service,
             project=project,
             template_parser=request.app.template_parser,
             limit=chat_request.limit
@@ -121,7 +121,7 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
         ))
     
     # update queries
-    topic, failed, resolved, _, _ = nlp_controller.classify_query_topic_and_failure(query = chat_request.query,
+    topic, failed, resolved, _, _ = nlp_service.classify_query_topic_and_failure(query = chat_request.query,
     query_answer=answer, topic_names=["regulations", "curriculum", "courses", "departments", "academic_calendar",
      "social", "non-relevant", "other"])
 
@@ -172,8 +172,8 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
                 content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
             )
     
-    # nlp_controller instance
-    nlp_controller = NLPController(generation_client= request.app.generation_client,
+    # nlp_service instance
+    nlp_service = NLPService(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
                                    template_parser=request.app.template_parser,
@@ -189,7 +189,7 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
 
     
     # get answer
-    # answer, full_prompt, chat_history, *_ = nlp_controller.answer_rag_questions(project, query = chat_request.query,
+    # answer, full_prompt, chat_history, *_ = nlp_service.answer_rag_questions(project, query = chat_request.query,
     #                                                                         limit=chat_request.limit,
     #                                                                         chat_history = chat_history)
 
@@ -202,7 +202,7 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
     result = await request.app.agent_client.run(
         user_prompt=chat_request.query,
         deps=AgentDeps(
-            nlp_controller=nlp_controller,
+            nlp_service=nlp_service,
             project=project,
             template_parser=request.app.template_parser,
             limit=chat_request.limit
@@ -233,7 +233,7 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
         _ = await chat_model.update_chat_expiry(chat_id= ObjectId(chat_id), TTL = request.app.guest_chat_TTL)
 
     # update queries
-    topic, failed, resolved, _, _ = nlp_controller.classify_query_topic_and_failure(query = chat_request.query,
+    topic, failed, resolved, _, _ = nlp_service.classify_query_topic_and_failure(query = chat_request.query,
     query_answer=answer, topic_names=["regulations", "curriculum", "courses", "departments", "academic_calendar",
      "social", "non-relevant", "other"])
 

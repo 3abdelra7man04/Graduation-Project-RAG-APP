@@ -2,7 +2,7 @@ from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request, Ba
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
-from controllers import DataController, ProjectController, ProcessController, NLPController
+from services import DataService, ProjectService, ProcessService, NLPService
 import aiofiles
 from models import ResponseSignal
 import logging
@@ -54,8 +54,8 @@ async def process_and_index_pipeline(
         # STEP 1: Update status to PROCESSING
         _ = await asset_model.update_asset_status(asset_id, new_status= AssetStatusEnum.PROCESSING.value)
 
-        # create Process Controller object
-        process_cotroller = ProcessController(project_id=project_id)
+        # create Process Service object
+        process_service = ProcessService(project_id=project_id)
 
         chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
 
@@ -63,11 +63,11 @@ async def process_and_index_pipeline(
             _ = await chunk_model.delete_chunks_by_project_id(project_id=project.id)
 
         # get file content
-        file_content = process_cotroller.get_file_content(file_id)
+        file_content = process_service.get_file_content(file_id)
 
 
         # get file chunks
-        file_chunks = process_cotroller.process_file_content(
+        file_chunks = process_service.process_file_content(
             file_id=file_id,
             file_content=file_content,
             chunk_size=chunk_size,
@@ -90,15 +90,15 @@ async def process_and_index_pipeline(
         # STEP 2: Save chunks to DB (Indexing Phase)
         await asset_model.update_asset_status(asset_id, AssetStatusEnum.IDNEXING.value)
 
-        # nlp_controller instance
+        # nlp_service instance
 
-        nlp_controller = NLPController(generation_client= request.app.generation_client,
+        nlp_service = NLPService(generation_client= request.app.generation_client,
                                     embedding_client=request.app.embedding_client,
                                     vectordb_client= request.app.vectordb_client,
                                     template_parser=request.app.template_parser)
         
         # index chunks into vector db
-        _ = nlp_controller.index_into_vectordb(Project=project, chunks= file_chunks_records)
+        _ = nlp_service.index_into_vectordb(Project=project, chunks= file_chunks_records)
 
         # STEP 3: Update status to SUCCESS / COMPLETED
         await asset_model.update_asset_status(asset_id, AssetStatusEnum.SUCCESS.value)
@@ -134,11 +134,11 @@ async def upload_data(
 
     project = await project_model.get_project_or_create_one(project_id=project_id)
 
-    # Initialize data controller
-    data_controller = DataController()
+    # Initialize data service
+    data_service = DataService()
 
     # Validate uploaded file
-    is_valid, result_signal = data_controller.validate_uploaded_file(file=file)
+    is_valid, result_signal = data_service.validate_uploaded_file(file=file)
 
     if not is_valid:
         return JSONResponse(
@@ -147,8 +147,8 @@ async def upload_data(
         )
 
     # Resolve project directory and file path
-    project_dir_path = ProjectController().get_project_path(project_id=project_id)
-    file_path, file_id = data_controller.generate_unique_filepath(
+    project_dir_path = ProjectService().get_project_path(project_id=project_id)
+    file_path, file_id = data_service.generate_unique_filepath(
         orig_file_name=file.filename,
         project_id=project_id,
     )
@@ -171,8 +171,8 @@ async def upload_data(
     
 
     # find asset type
-    process_cotroller = ProcessController(project_id=project_id)
-    asset_ext = process_cotroller.get_file_extension(file_id=file_id)
+    process_service = ProcessService(project_id=project_id)
+    asset_ext = process_service.get_file_extension(file_id=file_id)
     asset_type = ""
 
     if asset_ext == ProcessingEnum.PDF.value:
@@ -259,7 +259,7 @@ async def delete_uploaded_file(request: Request, project_id: str, asset_id: str)
     file_chunks = await chunk_model.get_chunks_by_asset_id(asset_id=ObjectId(asset_id))
 
     # delete indices of the file from Qdrant vector DB
-    nlp_controller = NLPController(
+    nlp_service = NLPService(
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
         vectordb_client=request.app.vectordb_client,
@@ -267,7 +267,7 @@ async def delete_uploaded_file(request: Request, project_id: str, asset_id: str)
     )
     
     try:
-        await nlp_controller.delete_file_from_vectordb(
+        await nlp_service.delete_file_from_vectordb(
             Project=project,
             file_chunks=file_chunks
         )
@@ -282,7 +282,7 @@ async def delete_uploaded_file(request: Request, project_id: str, asset_id: str)
 
     # delete file from filesystem
     asset_name = asset_record.get("asset_name")
-    project_dir_path = ProjectController().get_project_path(project_id=project_id)
+    project_dir_path = ProjectService().get_project_path(project_id=project_id)
     
     file_path = None
     if file_chunks:
@@ -291,7 +291,7 @@ async def delete_uploaded_file(request: Request, project_id: str, asset_id: str)
 
     # fallback: search by name pattern in project directory if chunk metadata wasn't available
     if (not file_path or not os.path.exists(file_path)) and asset_name:
-        cleaned_file_name = DataController().get_clean_file_name(orig_file_name=asset_name)
+        cleaned_file_name = DataService().get_clean_file_name(orig_file_name=asset_name)
         matching_files = glob.glob(os.path.join(project_dir_path, f"*_{cleaned_file_name}"))
         if matching_files:
             file_path = matching_files[0]

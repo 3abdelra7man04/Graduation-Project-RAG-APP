@@ -1,11 +1,11 @@
 from stores.llm.templates.template_parser import TemplateParser
 from dataclasses import dataclass
 from typing import Optional, Any
-from controllers.NLPController import NLPController
+from services.NLPService import NLPService
 
 @dataclass
 class AgentDeps:
-    nlp_controller: Optional[NLPController] = None
+    nlp_service: Optional[NLPService] = None
     project: Optional[Any] = None
     template_parser: Optional[TemplateParser] = None
     limit: int = 5

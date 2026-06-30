@@ -19,14 +19,14 @@ async def semantic_search(ctx: RunContext[AgentDeps], query: str) -> str:
         query: A clean, keyword-dense search phrase (optimized for Arabic document retrieval).
     """
 
-    if not ctx.deps.nlp_controller:
-        return "Error: NLP Controller is not initialized in dependencies."
+    if not ctx.deps.nlp_service:
+        return "Error: NLP Service is not initialized in dependencies."
     if not ctx.deps.project:
         return "Error: Project is not initialized in dependencies."
         
     try:
         # search_in_vectordb returns (reranked_documents, HyDE_prompt_tokens, HyDE_completion_tokens)
-        retrieved_documents, _, _ = ctx.deps.nlp_controller.search_in_vectordb(
+        retrieved_documents, _, _ = ctx.deps.nlp_service.search_in_vectordb(
             Project=ctx.deps.project,
             query=query,
             limit=ctx.deps.limit

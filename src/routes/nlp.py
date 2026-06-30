@@ -6,7 +6,7 @@ from .schemes.nlp import PushRequest, SearchRequest
 from models.ProjectModel import ProjectModel
 from models.ChunkModel import ChunkModel
 from models.enums.ResponseEnums import ResponseSignal
-from controllers import NLPController
+from services import NLPService
 
 
 # Uvicorn logger instance
@@ -37,14 +37,14 @@ async def index_project_delete(request: Request, project_id: str):
                 content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
             )
     
-    # nlp_controller instance
-    nlp_controller = NLPController(generation_client= request.app.generation_client,
+    # nlp_service instance
+    nlp_service = NLPService(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
                                    template_parser=request.app.template_parser)
     
     # get chunks of project on batches and then index them
-    is_deleted = nlp_controller.reset_vectordb_collection(Project=project)
+    is_deleted = nlp_service.reset_vectordb_collection(Project=project)
 
     if not is_deleted:
         return JSONResponse(
@@ -85,8 +85,8 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
     # create chunk_model instane
     chunk_model = await ChunkModel.create_instance(db_client=db_client)
     
-    # nlp_controller instance
-    nlp_controller = NLPController(generation_client= request.app.generation_client,
+    # nlp_service instance
+    nlp_service = NLPService(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
                                    template_parser=request.app.template_parser)
@@ -96,7 +96,7 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
     inserted_chunks_count = 0
 
     if push_request.do_reset:
-        nlp_controller.reset_vectordb_collection(Project = project)
+        nlp_service.reset_vectordb_collection(Project = project)
         print("RESET DONE")
 
     while True:
@@ -110,7 +110,7 @@ async def index_project(request: Request, project_id: str, push_request: PushReq
             break
         
         # index them into vector db
-        is_inserted = nlp_controller.index_into_vectordb(Project=project, chunks=chunks)
+        is_inserted = nlp_service.index_into_vectordb(Project=project, chunks=chunks)
 
         if not is_inserted:
             return JSONResponse(
@@ -150,13 +150,13 @@ async def get_project_index_info(request: Request, project_id: str):
                 content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
             )
     
-    # nlp_controller instance
-    nlp_controller = NLPController(generation_client= request.app.generation_client,
+    # nlp_service instance
+    nlp_service = NLPService(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
                                    template_parser=request.app.template_parser)
     
-    info = nlp_controller.get_vector_db_collection_info(project)
+    info = nlp_service.get_vector_db_collection_info(project)
 
     if not info:
         return JSONResponse(
@@ -190,14 +190,14 @@ async def search_in_index(request: Request, project_id: str, search_request: Sea
                 content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
             )
     
-    # nlp_controller instance
-    nlp_controller = NLPController(generation_client= request.app.generation_client,
+    # nlp_service instance
+    nlp_service = NLPService(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
                                    template_parser=request.app.template_parser,
                                    reranking_client=request.app.reranking_client)
     
-    results = nlp_controller.search_in_vectordb(Project= project, query= search_request.query, limit= search_request.limit)
+    results = nlp_service.search_in_vectordb(Project= project, query= search_request.query, limit= search_request.limit)
 
     if not results:
         return JSONResponse(
@@ -230,14 +230,14 @@ async def answer_rag(request: Request, project_id: str, search_request: SearchRe
                 content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
             )
     
-    # nlp_controller instance
-    nlp_controller = NLPController(generation_client= request.app.generation_client,
+    # nlp_service instance
+    nlp_service = NLPService(generation_client= request.app.generation_client,
                                    embedding_client=request.app.embedding_client,
                                    vectordb_client= request.app.vectordb_client,
                                    template_parser=request.app.template_parser,
                                    reranking_client=request.app.reranking_client)
     
-    answer, full_prompt, chat_history, prompt_tokens, completion_tokens = nlp_controller.answer_rag_questions(project, query = search_request.query, limit=search_request.limit)
+    answer, full_prompt, chat_history, prompt_tokens, completion_tokens = nlp_service.answer_rag_questions(project, query = search_request.query, limit=search_request.limit)
 
     if not answer:
         return JSONResponse(

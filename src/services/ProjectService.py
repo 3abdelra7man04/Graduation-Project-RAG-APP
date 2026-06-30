@@ -1,11 +1,11 @@
-from .BaseController import BaseController
+from .BaseService import BaseService
 from fastapi import UploadFile
 from models import ResponseSignal
 import os
 
 
-class ProjectController(BaseController):
-    # Controller for project directory management
+class ProjectService(BaseService):
+    # Service for project directory management
     def __init__(self):
         super().__init__()
 

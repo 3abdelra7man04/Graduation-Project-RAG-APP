@@ -1,13 +1,13 @@
-from .BaseController import BaseController
-from .ProjectController import ProjectController
+from .BaseService import BaseService
+from .ProjectService import ProjectService
 from fastapi import UploadFile
 from models import ResponseSignal
 import re
 import os
 
 
-class DataController(BaseController):
-    # Controller for file-related operations
+class DataService(BaseService):
+    # Service for file-related operations
     def __init__(self):
         super().__init__()
         # Used to convert MB to bytes
@@ -30,7 +30,7 @@ class DataController(BaseController):
         random_key = self.generate_random_string()
 
         # Get project directory path
-        project_path = ProjectController().get_project_path(project_id=project_id)
+        project_path = ProjectService().get_project_path(project_id=project_id)
 
         # Sanitize original file name
         cleaned_file_name = self.get_clean_file_name(orig_file_name=orig_file_name)

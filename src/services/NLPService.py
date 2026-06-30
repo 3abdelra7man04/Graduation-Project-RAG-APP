@@ -1,11 +1,11 @@
-from .BaseController import BaseController
+from .BaseService import BaseService
 from models.db_schemes import Project
 from models.db_schemes import DataChunk
 from stores.llm.llm_enums import DocumentTypeEnum
 from .schemes.query_classification import QueryClassification
 import json
 
-class NLPController(BaseController):
+class NLPService(BaseService):
     def __init__(self, generation_client, embedding_client, vectordb_client, template_parser,
                  reranking_client = None):
         super().__init__()

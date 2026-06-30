@@ -4,8 +4,8 @@ import random
 import string
 
 
-class BaseController:
-    # Base class for shared controller utilities
+class BaseService:
+    # Base class for shared service utilities
     def __init__(self):
         # Load application settings
         self.app_settings = get_settings()

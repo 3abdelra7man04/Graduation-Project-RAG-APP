@@ -1,20 +1,20 @@
-from .BaseController import BaseController
-from .ProjectController import ProjectController
+from .BaseService import BaseService
+from .ProjectService import ProjectService
 import os
 from langchain_community.document_loaders import TextLoader
 from .utils.MyPDFLoader import MyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from models.enums.ProcesingEnums import ProcessingEnum
 
-# process controller
-class ProcessController(BaseController):
+# process service
+class ProcessService(BaseService):
     
     # constructor
     def __init__(self, project_id: str):
         super().__init__()
 
         self.project_id = project_id
-        self.project_path = ProjectController().get_project_path(project_id=project_id)
+        self.project_path = ProjectService().get_project_path(project_id=project_id)
     
     # get file extension to determine which data loader you'll use
     def get_file_extension(self, file_id: str):
