@@ -10,6 +10,8 @@ const InboxPage = ({ t, lang, theme }) => {
   const [selectedChatId, setSelectedChatId] = useState("chat-1");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [monitorData, setMonitorData] = useState(null);
+  const [expandedTraceIdx, setExpandedTraceIdx] = useState(null);
 
   const [allChats, setAllChats] = useState([]);
   
@@ -27,6 +29,26 @@ const InboxPage = ({ t, lang, theme }) => {
       .catch(err => console.error("Error fetching chats:", err));
   }, []);
 
+  useEffect(() => {
+    if (selectedChatId && selectedChatId !== "chat-1") {
+      fetch(`http://localhost:5000/api/v1/monitor/conversation/${selectedChatId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.conversation) {
+            setMonitorData(data.conversation);
+          } else {
+            setMonitorData(null);
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching monitor data:", err);
+          setMonitorData(null);
+        });
+    } else {
+      setMonitorData(null);
+    }
+  }, [selectedChatId]);
+
   // Filtering based on date range
   const filteredChats = useMemo(() => {
     return allChats.filter((c) => {
@@ -36,7 +58,11 @@ const InboxPage = ({ t, lang, theme }) => {
     });
   }, [startDate, endDate, allChats]);
 
-  const selectedChat = filteredChats.find(c => c.id === selectedChatId) || filteredChats[0];
+  const selectedChat = filteredChats.find(c => c.id === selectedChatId) || filteredChats[0] || null;
+  const convCost = (monitorData && monitorData.total_conversation_cost !== undefined) ? monitorData.total_conversation_cost : ((selectedChat && selectedChat.total_conversation_cost) || 0);
+  const convLatency = (monitorData && monitorData.avg_latency_seconds !== undefined) ? monitorData.avg_latency_seconds : ((selectedChat && selectedChat.avg_latency_seconds) || 0);
+  const convTokensIn = (monitorData && monitorData.total_tokens_in !== undefined) ? monitorData.total_tokens_in : ((selectedChat && selectedChat.total_tokens_in) || 0);
+  const convTokensOut = (monitorData && monitorData.total_tokens_out !== undefined) ? monitorData.total_tokens_out : ((selectedChat && selectedChat.total_tokens_out) || 0);
 
   // KPIs
   const totalChats = allChats.length;
@@ -282,15 +308,66 @@ const InboxPage = ({ t, lang, theme }) => {
               <div style={{
                 padding: "20px 24px",
                 borderBottom: `1px solid ${isDark ? "#333" : "#f3f4f6"}`,
-                fontWeight: "bold",
-                fontSize: "16px",
-                color: isDark ? "#fff" : "#121212"
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "12px",
               }}>
-                {selectedChat.date} {selectedChat.time}
+                <div style={{ fontWeight: "bold", fontSize: "16px", color: isDark ? "#fff" : "#121212" }}>
+                  {selectedChat.date} {selectedChat.time}
+                </div>
+                
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <span style={{
+                    padding: "6px 14px",
+                    borderRadius: "20px",
+                    fontSize: "13px",
+                    fontWeight: "bold",
+                    backgroundColor: `${primaryColor}15`,
+                    color: primaryColor,
+                    border: `1px solid ${primaryColor}30`,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px"
+                  }}>
+                    💰 {isAr ? "التكلفة:" : "Cost:"} ${Number(convCost).toFixed(6)}
+                  </span>
+                  <span style={{
+                    padding: "6px 14px",
+                    borderRadius: "20px",
+                    fontSize: "13px",
+                    fontWeight: "bold",
+                    backgroundColor: `${secondaryColor}15`,
+                    color: secondaryColor,
+                    border: `1px solid ${secondaryColor}30`,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px"
+                  }}>
+                    ⚡ {isAr ? "متوسط الزمن:" : "Avg Latency:"} {Number(convLatency).toFixed(2)}s
+                  </span>
+                  <span style={{
+                    padding: "6px 14px",
+                    borderRadius: "20px",
+                    fontSize: "13px",
+                    fontWeight: "bold",
+                    backgroundColor: isDark ? "#2a2a2a" : "#f3f4f6",
+                    color: isDark ? "#e5e7eb" : "#4b5563",
+                    border: `1px solid ${isDark ? "#444" : "#e5e7eb"}`,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px"
+                  }}>
+                    📥 {isAr ? "مدخلات:" : "In:"} {convTokensIn} | 📤 {isAr ? "مخرجات:" : "Out:"} {convTokensOut} {isAr ? "توكن" : "tokens"}
+                  </span>
+                </div>
               </div>
               <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                  {selectedChat.queries.map((q, i) => (
+                  {selectedChat && selectedChat.queries && selectedChat.queries.map((q, i) => {
+                    const monQuery = (monitorData && monitorData.queries && monitorData.queries[i]) || q || {};
+                    return (
                     <div key={q.id} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                       
                       {/* User Message (Anonymous) */}
@@ -375,67 +452,50 @@ const InboxPage = ({ t, lang, theme }) => {
                               }}>
                                   <span
                                       style={{
-                                          fontSize: "12px",
-                                          fontWeight: "900",
-                                          color: confColor(q.confidence),
-                                      }}
-                                      >
-                                      {Math.round(q.confidence * 100)}% {t("conf")}
-                                  </span>
-
-                                  {q.source && (
-                                      <span
-                                      style={{
                                           padding: "4px 10px",
                                           borderRadius: "6px",
                                           fontSize: "11px",
                                           fontWeight: "bold",
                                           backgroundColor: `${primaryColor}15`,
                                           color: primaryColor,
-                                          display: "flex",
-                                          alignItems: "center",
-                                          gap: "4px",
                                       }}
-                                      >
-                                      <Icon.Doc size={12} /> {q.source}
-                                      </span>
-                                  )}
+                                  >
+                                      💰 {isAr ? "تكلفة الاستعلام:" : "Query Cost:"} ${Number((monQuery && (monQuery.query_cost || monQuery.total_cost)) || 0).toFixed(6)}
+                                  </span>
 
-                                  {q.liked === true && (
-                                      <span
+                                  <span
                                       style={{
                                           padding: "4px 10px",
                                           borderRadius: "6px",
                                           fontSize: "11px",
                                           fontWeight: "bold",
-                                          backgroundColor: "#f0fdf4",
-                                          color: "#166534",
+                                          backgroundColor: `${secondaryColor}15`,
+                                          color: secondaryColor,
                                       }}
-                                      >
-                                      {t("helpful")}
-                                      </span>
-                                  )}
-                                  {q.liked === false && (
-                                      <span
+                                  >
+                                      ⚡ {isAr ? "الزمن:" : "Latency:"} {Number((monQuery && (monQuery.latency || monQuery.latency_seconds)) || 0).toFixed(2)}s
+                                  </span>
+
+                                  <span
                                       style={{
                                           padding: "4px 10px",
                                           borderRadius: "6px",
                                           fontSize: "11px",
                                           fontWeight: "bold",
-                                          backgroundColor: "#fef2f2",
-                                          color: "#991b1b",
+                                          backgroundColor: isDark ? "#2a2a2a" : "#f3f4f6",
+                                          color: isDark ? "#e5e7eb" : "#4b5563",
                                       }}
-                                      >
-                                      {t("unhelpful")}
-                                      </span>
-                                  )}
+                                  >
+                                      📥 {isAr ? "مدخلات:" : "In:"} {(monQuery && monQuery.tokens_in) || 0} | 📤 {isAr ? "مخرجات:" : "Out:"} {(monQuery && monQuery.tokens_out) || 0}
+                                  </span>
 
                                   <button
+                                      onClick={() => setExpandedTraceIdx(expandedTraceIdx === i ? null : i)}
                                       style={{
                                           marginLeft: isAr ? 0 : "auto",
                                           marginRight: isAr ? "auto" : 0,
-                                          backgroundColor: "transparent",
-                                          border: "none",
+                                          backgroundColor: expandedTraceIdx === i ? `${primaryColor}25` : "transparent",
+                                          border: `1px solid ${primaryColor}40`,
                                           color: primaryColor,
                                           fontWeight: "bold",
                                           fontSize: "12px",
@@ -443,20 +503,60 @@ const InboxPage = ({ t, lang, theme }) => {
                                           display: "flex",
                                           alignItems: "center",
                                           gap: "5px",
-                                          padding: "4px 8px",
+                                          padding: "4px 10px",
                                           borderRadius: "6px",
-                                          transition: "background-color 0.2s"
+                                          transition: "all 0.2s"
                                       }}
-                                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = `${primaryColor}15`}
-                                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                                   >
-                                      <Icon.Eye size={14} /> {t("viewFull")}
+                                      <Icon.Eye size={14} /> {expandedTraceIdx === i ? (isAr ? "إخفاء المسار" : "Hide Trace") : (isAr ? "عرض مسار الوكيل" : "View Agent Trace")}
                                   </button>
                               </div>
+                              
+                              {expandedTraceIdx === i && monQuery && monQuery.trace && Array.isArray(monQuery.trace) && monQuery.trace.length > 0 && (
+                                  <div style={{
+                                      marginTop: "16px",
+                                      padding: "16px",
+                                      backgroundColor: isDark ? "#1a1a1a" : "#f8fafc",
+                                      borderRadius: "10px",
+                                      border: `1px solid ${isDark ? "#333" : "#e2e8f0"}`,
+                                      width: "100%",
+                                      fontSize: "13px"
+                                  }}>
+                                      <div style={{ fontWeight: "bold", marginBottom: "12px", color: primaryColor }}>
+                                          🛠️ {isAr ? "خطوات تنفيذ الوكيل (Agent Trace):" : "Agent Execution Trace:"}
+                                      </div>
+                                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                          {monQuery.trace.map((step, sIdx) => {
+                                              const stepType = (step && step.step_type) || "STEP";
+                                              const stepTitle = (step && step.title) || stepType;
+                                              const stepContent = step && step.content !== undefined ? step.content : "";
+                                              const isTool = stepType.indexOf('TOOL') !== -1;
+                                              const borderColor = stepType === 'TOOL_CALL' ? secondaryColor : stepType === 'TOOL_RESULT' ? '#10b981' : primaryColor;
+                                              return (
+                                              <div key={sIdx} style={{
+                                                  padding: "10px 14px",
+                                                  backgroundColor: isDark ? "#222" : "#fff",
+                                                  borderRadius: "8px",
+                                                  borderLeft: `3px solid ${borderColor}`,
+                                                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+                                              }}>
+                                                  <div style={{ fontWeight: "bold", fontSize: "12px", color: isDark ? "#ccc" : "#475569", marginBottom: "4px" }}>
+                                                      {stepTitle}
+                                                  </div>
+                                                  <div style={{ fontFamily: isTool ? "monospace" : "inherit", whiteSpace: "pre-wrap", color: isDark ? "#eee" : "#1e293b", fontSize: "12px", wordBreak: "break-all" }}>
+                                                      {typeof stepContent === 'object' ? JSON.stringify(stepContent, null, 2) : String(stepContent)}
+                                                  </div>
+                                              </div>
+                                              );
+                                          })}
+                                      </div>
+                                  </div>
+                              )}
                           </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
             </>

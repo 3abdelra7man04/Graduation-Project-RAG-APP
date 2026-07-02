@@ -9,3 +9,4 @@ class AgentDeps:
     project: Optional[Any] = None
     template_parser: Optional[TemplateParser] = None
     limit: int = 5
+    monitor_service: Optional[Any] = None

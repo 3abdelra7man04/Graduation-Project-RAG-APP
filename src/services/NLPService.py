@@ -116,19 +116,19 @@ class NLPService(BaseService):
         return HyDE, HyDE_prompt_tokens, HyDE_completion_tokens
 
     
-    def search_in_vectordb(self, Project: Project, query: str, limit: int):
+    def search_in_vectordb(self, Project: Project, query: str, limit: int, return_full_usage: bool = False):
 
         # get collection name
         collection_name = self.create_collection_name(project_id=Project.project_id)
 
         # embed query
-        query_vector = self.embedding_client.embed_text(text = query, document_type = DocumentTypeEnum.QUERY.value)
+        query_vector, query_embed_tokens = self.embedding_client.embed_text(text = query, document_type = DocumentTypeEnum.QUERY.value, return_tokens=True)
 
         # get HyDE
         HyDE, HyDE_prompt_tokens, HyDE_completion_tokens = self.generate_hypothetical_document(query=query)
 
         # embed HyDE
-        HyDE_vector = self.embedding_client.embed_text(text = query, document_type = DocumentTypeEnum.DOCUMENT.value)
+        HyDE_vector, hyde_embed_tokens = self.embedding_client.embed_text(text = HyDE, document_type = DocumentTypeEnum.DOCUMENT.value, return_tokens=True)
 
         # search in vectordb
         retrieved_documents = self.vectordb_client.search_vectors(collection_name = collection_name,
@@ -142,6 +142,18 @@ class NLPService(BaseService):
                                                                       in retrieved_documents],
                                                           limit = limit)
         
+        if return_full_usage:
+            return {
+                "retrieved_documents": reranked_documents,
+                "hyde_prompt_tokens": HyDE_prompt_tokens,
+                "hyde_completion_tokens": HyDE_completion_tokens,
+                "embedding_tokens": (query_embed_tokens or 0) + (hyde_embed_tokens or 0),
+                "query_embed_tokens": query_embed_tokens or 0,
+                "hyde_embed_tokens": hyde_embed_tokens or 0,
+                "query": query,
+                "hyde_text": HyDE
+            }
+
         # return documents and tokens used while searching
         return reranked_documents, HyDE_prompt_tokens, HyDE_completion_tokens
     

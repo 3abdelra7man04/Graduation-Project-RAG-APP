@@ -37,17 +37,17 @@ class CoHereProvider(LLMInterface):
     def set_generation_model(self, model_id: str):
         self.generation_model_id = model_id
     
-    def embed_text(self, text: str, document_type: str = None):
+    def embed_text(self, text: str, document_type: str = None, return_tokens: bool = False):
         
         # validate if there is an OpenAI client
         if not self.client:
             self.logger.error("CoHere Client was not set")
-            return None
+            return (None, 0) if return_tokens else None
 
         # validate if there is an embedding model id
         if not self.embedding_model_id:
             self.logger.error("CoHere Embedding model was not set")
-            return None
+            return (None, 0) if return_tokens else None
 
         # set input type
         input_type = CoHereEnum.DOCUMENT.value
@@ -64,10 +64,20 @@ class CoHereProvider(LLMInterface):
 
         if not response or not response.embeddings or not response.embeddings.float:
             self.logger.error("Error while embedding text with CoHere")
-            return None
+            return (None, 0) if return_tokens else None
         
         # return the response after validation
-        return response.embeddings.float[0]
+        embedding = response.embeddings.float[0]
+        if return_tokens:
+            tokens = 0
+            if hasattr(response, 'meta') and response.meta and hasattr(response.meta, 'tokens') and response.meta.tokens and getattr(response.meta.tokens, 'input_tokens', None):
+                tokens = response.meta.tokens.input_tokens
+            elif hasattr(response, 'meta') and isinstance(response.meta, dict) and 'billing' in response.meta:
+                tokens = response.meta['billing'].get('tokens', 0)
+            else:
+                tokens = len(text) // 4
+            return embedding, tokens
+        return embedding
     
     def rerank(self, query: str, documents: list, limit: int):
         # validate if there is an cohere client

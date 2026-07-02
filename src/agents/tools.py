@@ -25,12 +25,24 @@ async def semantic_search(ctx: RunContext[AgentDeps], query: str) -> str:
         return "Error: Project is not initialized in dependencies."
         
     try:
-        # search_in_vectordb returns (reranked_documents, HyDE_prompt_tokens, HyDE_completion_tokens)
-        retrieved_documents, _, _ = ctx.deps.nlp_service.search_in_vectordb(
+        search_res = ctx.deps.nlp_service.search_in_vectordb(
             Project=ctx.deps.project,
             query=query,
-            limit=ctx.deps.limit
+            limit=ctx.deps.limit,
+            return_full_usage=True
         )
+        retrieved_documents = search_res.get("retrieved_documents", [])
+        
+        if ctx.deps.monitor_service:
+            ctx.deps.monitor_service.record_search_tool_usage(
+                hyde_prompt_tokens=search_res.get("hyde_prompt_tokens", 0),
+                hyde_completion_tokens=search_res.get("hyde_completion_tokens", 0),
+                embedding_tokens=search_res.get("embedding_tokens", 0),
+                query_embed_tokens=search_res.get("query_embed_tokens", 0),
+                hyde_embed_tokens=search_res.get("hyde_embed_tokens", 0),
+                query=query,
+                retrieved_documents=retrieved_documents
+            )
         
         if not retrieved_documents:
             return "No matching documents found."

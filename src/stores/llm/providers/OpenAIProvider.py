@@ -43,26 +43,31 @@ class OpenAIProvider(LLMInterface):
     def set_classification_model(self, model_id: str):
         self.classification_model_id = model_id
     
-    def embed_text(self, text: str, document_type: str = None):
+    def embed_text(self, text: str, document_type: str = None, return_tokens: bool = False):
         
         # validate if there is an OpenAI client
         if not self.client:
             self.logger.error("OpenAI Client was not set")
-            return None
+            return (None, 0) if return_tokens else None
 
         # validate if there is an embedding model id
         if not self.embedding_model_id:
             self.logger.error("OpenAI Embedding model was not set")
-            return None
+            return (None, 0) if return_tokens else None
 
         # get response and validate it
         response = self.client.embeddings.create(input= self.process_prompt(text), model= self.embedding_model_id)
 
         if not response or not response.data or len(response.data) == 0 or not response.data[0].embedding :
             self.logger.error("error while embedding text using OpenAI provider")
+            return (None, 0) if return_tokens else None
 
         # return the embeddings from response
-        return response.data[0].embedding
+        embedding = response.data[0].embedding
+        if return_tokens:
+            tokens = response.usage.prompt_tokens if hasattr(response, 'usage') and response.usage else len(text) // 4
+            return embedding, tokens
+        return embedding
     
     
     def process_prompt(self, prompt: str):

@@ -42,6 +42,19 @@ class QueryModel(BaseDataModel):
 
         return result
 
+    async def get_query_by_id(self, query_id: ObjectId):
+        query = await self.collection.find_one({"_id": query_id})
+        if not query:
+            return None
+        return Query(**query)
+
+    async def list_queries_by_chat_id(self, chat_id: ObjectId, ascending: bool = False):
+        order = 1 if ascending else -1
+        queries = await self.collection.find({
+            "query_chat_id": chat_id
+        }).sort("createdAt", order).to_list(length=None)
+        return [Query(**q) for q in queries]
+
     async def list_queries_by_project_id(self, project_id: ObjectId, ascending: bool = False):
         
         if ascending == True: 
@@ -53,4 +66,4 @@ class QueryModel(BaseDataModel):
                 "query_project_id": project_id
                 }).sort("createdAt", order).to_list(length = None)
 
-        return queries
+        return [Query(**q) for q in queries]
