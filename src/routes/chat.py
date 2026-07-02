@@ -7,7 +7,8 @@ from models.ProjectModel import ProjectModel
 from models.ChatModel import ChatModel
 from models.QueryModel import QueryModel
 from models.enums.ResponseEnums import ResponseSignal
-from services import NLPService
+from services import NLPService, MonitorService
+import time
 from models.db_schemes.chat import Chat
 from models.db_schemes.query import Query
 from datetime import datetime, timedelta
@@ -64,7 +65,8 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
                                    template_parser=request.app.template_parser,
                                    reranking_client= request.app.reranking_client)
 
-    # answer, full_prompt, chat_history, *_ = nlp_service.answer_rag_questions(project, query = chat_request.query, limit=chat_request.limit)
+    monitor_service = MonitorService()
+    start_time = time.time()
     
     # run agent
     result = await request.app.agent_client.run(
@@ -73,15 +75,37 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
             nlp_service=nlp_service,
             project=project,
             template_parser=request.app.template_parser,
-            limit=chat_request.limit
+            limit=chat_request.limit,
+            monitor_service=monitor_service
         )
     )
+    latency_seconds = time.time() - start_time
 
     print_tools_called_with_results(result)
     
     # agent answer
     answer = result.output
     
+    # query classification
+    topic, failed, resolved, class_in_tokens, class_out_tokens = nlp_service.classify_query_topic_and_failure(
+        query=chat_request.query,
+        query_answer=answer,
+        topic_names=["regulations", "curriculum", "courses", "departments", "academic_calendar", "social", "non-relevant", "other"]
+    )
+    classification_model = getattr(request.app.generation_client, "classification_model_id", None)
+    
+    monitor_data = monitor_service.get_query_monitor_data(
+        result=result,
+        query_text=chat_request.query,
+        latency_seconds=latency_seconds,
+        agent_model=getattr(request.app.agent_client, "model", None) or getattr(request.app.agent_client, "model_name", None),
+        embedding_model=request.app.embedding_client.embedding_model_id,
+        hyde_model=request.app.generation_client.generation_model_id,
+        classification_model=classification_model,
+        classification_prompt_tokens=class_in_tokens,
+        classification_completion_tokens=class_out_tokens
+    )
+
     # agent chat history using adapter
     chat_history = TypeAdapter(list).dump_python(result.all_messages(), mode='json')
 
@@ -121,10 +145,6 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
         ))
     
     # update queries
-    topic, failed, resolved, _, _ = nlp_service.classify_query_topic_and_failure(query = chat_request.query,
-    query_answer=answer, topic_names=["regulations", "curriculum", "courses", "departments", "academic_calendar",
-     "social", "non-relevant", "other"])
-
     query_model = await QueryModel.create_instance(db_client = db_client)
 
     _ = await query_model.add_query(Query(
@@ -136,6 +156,20 @@ async def start_conversation(request: Request, project_id: str,  chat_request: C
             createdAt = datetime.utcnow(),
             failed = failed,
             resolved = resolved,
+            query_answer=answer,
+            agent_in_tokens=monitor_data["agent_in_tokens"],
+            agent_out_tokens=monitor_data["agent_out_tokens"],
+            query_embed_tokens=monitor_data["query_embed_tokens"],
+            hyde_embed_tokens=monitor_data["hyde_embed_tokens"],
+            hyde_prompt_tokens=monitor_data["hyde_prompt_tokens"],
+            hyde_completion_tokens=monitor_data["hyde_completion_tokens"],
+            query_classification_prompt_tokens=monitor_data["query_classification_prompt_tokens"],
+            query_classification_completion_tokens=monitor_data["query_classification_completion_tokens"],
+            tokens_in=monitor_data["tokens_in"],
+            tokens_out=monitor_data["tokens_out"],
+            tool_calls_count=monitor_data["tool_calls_count"],
+            latency_seconds=monitor_data["latency_seconds"],
+            trace=monitor_data["trace"]
         ))
 
     if not answer:
@@ -198,6 +232,9 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
     # parse db dicts back into pydantic-ai message objects
     parsed_chat_history = TypeAdapter(list[ModelMessage]).validate_python(chat_history)
 
+    monitor_service = MonitorService()
+    start_time = time.time()
+
     # run agent
     result = await request.app.agent_client.run(
         user_prompt=chat_request.query,
@@ -205,16 +242,38 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
             nlp_service=nlp_service,
             project=project,
             template_parser=request.app.template_parser,
-            limit=chat_request.limit
+            limit=chat_request.limit,
+            monitor_service=monitor_service
         ),
         message_history=parsed_chat_history
     )
+    latency_seconds = time.time() - start_time
 
     print_tools_called_with_results(result)
     
     # agent answer
     answer = result.output
     
+    # query classification
+    topic, failed, resolved, class_in_tokens, class_out_tokens = nlp_service.classify_query_topic_and_failure(
+        query=chat_request.query,
+        query_answer=answer,
+        topic_names=["regulations", "curriculum", "courses", "departments", "academic_calendar", "social", "non-relevant", "other"]
+    )
+    classification_model = getattr(request.app.generation_client, "classification_model_id", None)
+    
+    monitor_data = monitor_service.get_query_monitor_data(
+        result=result,
+        query_text=chat_request.query,
+        latency_seconds=latency_seconds,
+        agent_model=getattr(request.app.agent_client, "model", None) or getattr(request.app.agent_client, "model_name", None),
+        embedding_model=request.app.embedding_client.embedding_model_id,
+        hyde_model=request.app.generation_client.generation_model_id,
+        classification_model=classification_model,
+        classification_prompt_tokens=class_in_tokens,
+        classification_completion_tokens=class_out_tokens
+    )
+
     # agent chat history using adapter
     chat_history = TypeAdapter(list).dump_python(result.all_messages(), mode='json')
 
@@ -233,10 +292,6 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
         _ = await chat_model.update_chat_expiry(chat_id= ObjectId(chat_id), TTL = request.app.guest_chat_TTL)
 
     # update queries
-    topic, failed, resolved, _, _ = nlp_service.classify_query_topic_and_failure(query = chat_request.query,
-    query_answer=answer, topic_names=["regulations", "curriculum", "courses", "departments", "academic_calendar",
-     "social", "non-relevant", "other"])
-
     query_model = await QueryModel.create_instance(db_client = db_client)
 
     _ = await query_model.add_query(Query(
@@ -248,6 +303,20 @@ async def continue_conversation(request: Request, project_id: str, chat_id: str,
             createdAt = datetime.utcnow(),
             failed = failed,
             resolved = resolved,
+            query_answer=answer,
+            agent_in_tokens=monitor_data["agent_in_tokens"],
+            agent_out_tokens=monitor_data["agent_out_tokens"],
+            query_embed_tokens=monitor_data["query_embed_tokens"],
+            hyde_embed_tokens=monitor_data["hyde_embed_tokens"],
+            hyde_prompt_tokens=monitor_data["hyde_prompt_tokens"],
+            hyde_completion_tokens=monitor_data["hyde_completion_tokens"],
+            query_classification_prompt_tokens=monitor_data["query_classification_prompt_tokens"],
+            query_classification_completion_tokens=monitor_data["query_classification_completion_tokens"],
+            tokens_in=monitor_data["tokens_in"],
+            tokens_out=monitor_data["tokens_out"],
+            tool_calls_count=monitor_data["tool_calls_count"],
+            latency_seconds=monitor_data["latency_seconds"],
+            trace=monitor_data["trace"]
         ))
     # return response
     if not answer:

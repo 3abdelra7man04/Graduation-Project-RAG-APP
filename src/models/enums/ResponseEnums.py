@@ -62,3 +62,9 @@ class ResponseSignal(Enum):
     CHAT_RENAME_SUCCESS = "chat title is successfully renamed"
     CHAT_RENAME_ERROR = "error when renaming chat"
     
+    # ---------------------- monitor signals ----------------------
+    MONITOR_STATS_SUCCESS = "monitor stats retrieved successfully"
+    MONITOR_QUERY_SUCCESS = "monitor query retrieved successfully"
+    MONITOR_QUERY_NOT_FOUND = "monitor query not found"
+    MONITOR_CONVERSATION_SUCCESS = "monitor conversation retrieved successfully"
+    MONITOR_CONVERSATION_NOT_FOUND = "monitor conversation not found"
