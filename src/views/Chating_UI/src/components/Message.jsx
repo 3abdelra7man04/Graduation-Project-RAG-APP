@@ -3,6 +3,7 @@ import React from "react";
 import { assets } from "../assets/assets/assets";
 import moment from "moment";
 import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useAppContext } from "../context/AppContext";
 
 const Message = ({ message }) => {
@@ -28,9 +29,8 @@ const Message = ({ message }) => {
             : "bg-[#1A9BB3] border-[#1A9BB3] text-white rounded-tl-none" 
           }`}
         >
-          {/* استخدام prose لضمان تنسيق الـ Markdown (أكواد، قوائم، إلخ) بشكل صحيح */}
-          <div className={`prose prose-sm max-w-none ${!isUser ? "prose-invert" : theme === 'dark' ? "prose-invert" : ""}`}>
-            <Markdown>{message.content || ""}</Markdown>
+          <div className="markdown-content">
+            <Markdown remarkPlugins={[remarkGfm]}>{message.content || ""}</Markdown>
           </div>
         </div>
 

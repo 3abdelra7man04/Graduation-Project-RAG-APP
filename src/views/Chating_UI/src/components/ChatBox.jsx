@@ -3,6 +3,8 @@ import { useAppContext } from '../context/AppContext';
 import { assets } from "../assets/assets/assets";
 import { useParams, useNavigate } from 'react-router-dom';
 import { translations } from "../utils/languages";
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const ChatBox = () => {
     const { messages, sendPrompt, theme, user, chats, setSelectChat, getChatMessages, selectChat, language, token } = useAppContext();
@@ -103,9 +105,9 @@ const ChatBox = () => {
                                 ? 'bg-[#252525] text-gray-200 rounded-ss-none border-transparent' 
                                 : 'bg-gray-100 text-gray-800 rounded-ss-none border border-gray-200') 
                             }`}>
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                                {msg?.content || "..."}
-                            </p>
+                            <div className="text-sm leading-relaxed font-medium markdown-content">
+                                <Markdown remarkPlugins={[remarkGfm]}>{msg?.content || "..."}</Markdown>
+                            </div>
                         </div>
                     </div>
                 ))}

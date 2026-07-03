@@ -7,7 +7,8 @@ from models.ProjectModel import ProjectModel
 from models.ChunkModel import ChunkModel
 from models.enums.ResponseEnums import ResponseSignal
 from services import NLPService
-
+from agents.dependencies import AgentDeps
+from services import NLPService, MonitorService
 
 # Uvicorn logger instance
 logger = logging.getLogger("uvicorn.error")
@@ -237,7 +238,22 @@ async def answer_rag(request: Request, project_id: str, search_request: SearchRe
                                    template_parser=request.app.template_parser,
                                    reranking_client=request.app.reranking_client)
     
-    answer, full_prompt, chat_history, prompt_tokens, completion_tokens = nlp_service.answer_rag_questions(project, query = search_request.query, limit=search_request.limit)
+    monitor_service = MonitorService()
+    # answer, full_prompt, chat_history, prompt_tokens, completion_tokens = nlp_service.answer_rag_questions(project, query = search_request.query, limit=search_request.limit)
+
+    # run agent
+    result = await request.app.agent_client.run(
+        user_prompt=search_request.query,
+        deps=AgentDeps(
+            nlp_service=nlp_service,
+            project=project,
+            template_parser=request.app.template_parser,
+            limit=search_request.limit,
+            monitor_service=monitor_service
+        )
+    )
+
+    answer = result.output
 
     if not answer:
         return JSONResponse(
@@ -248,10 +264,6 @@ async def answer_rag(request: Request, project_id: str, search_request: SearchRe
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"signal": ResponseSignal.RAG_ANSWER_SUCCESS.value,
-                 "answer": answer,
-                 "prompt tokens": prompt_tokens,
-                 "completion tokens": completion_tokens,
-                 "full_prompt": full_prompt,
-                 "chat_history": chat_history}
+                 "answer": answer}
     )
     
