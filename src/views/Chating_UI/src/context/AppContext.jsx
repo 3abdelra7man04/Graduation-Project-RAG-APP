@@ -139,14 +139,14 @@ export const AppContextProvider = (props) => {
                     query: prompt,
                     user_id: token ? token : null,
                     is_guest: !token,
-                    limit: 3
+                    limit: 10
                 }, { headers: { token } });
             } else {
                 response = await axios.post(`${backendUrl}/api/v1/chat/${projectId}/c/${selectChat._id}`, {
                     query: prompt,
                     user_id: token ? token : null,
                     is_guest: !token,
-                    limit: 3
+                    limit: 10
                 }, { headers: { token } });
             }
 
