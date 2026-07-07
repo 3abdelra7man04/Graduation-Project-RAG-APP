@@ -4,6 +4,8 @@ from models.db_schemes import DataChunk
 from stores.llm.llm_enums import DocumentTypeEnum
 from .schemes.query_classification import QueryClassification
 import json
+import re
+from json_repair import repair_json
 
 class NLPService(BaseService):
     def __init__(self, generation_client, embedding_client, vectordb_client, template_parser,
@@ -231,8 +233,22 @@ class NLPService(BaseService):
             prompt = full_prompt, chat_history = [system_prompt], scheme = QueryClassification.model_json_schema()
         )
 
-        query_classification = json.loads(query_classification)
-        query_classification = QueryClassification(**query_classification)
+        # Clean reasoning tags (<think>...</think>) often returned by reasoning models
+        cleaned_str = re.sub(r"<think>.*?</think>", "", query_classification, flags=re.DOTALL).strip()
+        
+        # Remove markdown code block formatting if present
+        if cleaned_str.startswith("```"):
+            cleaned_str = re.sub(r"^```(?:json)?\s*", "", cleaned_str)
+            cleaned_str = re.sub(r"\s*```$", "", cleaned_str)
+        cleaned_str = cleaned_str.strip()
+
+        try:
+            classification_dict = json.loads(cleaned_str)
+        except Exception:
+            repaired_str = repair_json(cleaned_str)
+            classification_dict = json.loads(repaired_str) if isinstance(repaired_str, str) else repaired_str
+
+        query_classification = QueryClassification(**classification_dict)
 
         topic = query_classification.topic
         failed = query_classification.failed

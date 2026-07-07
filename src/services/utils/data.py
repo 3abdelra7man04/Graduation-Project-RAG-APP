@@ -127,7 +127,6 @@ def extract_pages(file_path,  output_base_dir, max_width = 600, dpi = 200):
             print(f"Detected broken JSON, attempting repair... page:{page_num}")
             repaired_string = repair_json(response.choices[0].message.content)
             response = json.loads(repaired_string)
-            raise e
         
 
         # add the source, file path, page, total_pages metadata
