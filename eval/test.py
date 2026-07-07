@@ -29,7 +29,7 @@ test_results = pd.DataFrame(TEST_DATA)
 
 print("Dataset is created")
 
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = "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"
 
 
 
@@ -108,8 +108,6 @@ async def test_rag_api(data):
         "retrieval context": retrieval_context,
         "answer": actual_output,
         "time to answer": time_to_answer,
-        "prompt tokens": answer_response["prompt tokens"],
-        "completion tokens": answer_response["completion tokens"],
         "context precision": context_precision_val,
         "context recall": context_recall_val,
         "Faithfulness": faithfulness_val,
