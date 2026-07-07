@@ -3,8 +3,8 @@ from typing import Any, Optional, List, Dict
 from datetime import datetime
 import time
 
-HYDE_INPUT_PRICE_PER_1M = 0.5
-HYDE_OUTPUT_PRICE_PER_1M = 3
+HYDE_INPUT_PRICE_PER_1M = 0.25
+HYDE_OUTPUT_PRICE_PER_1M = 1.5
 
 EMBEDDING_INPUT_PRICE_PER_1M = 0.13
 EMBEDDING_OUTPUT_PRICE_PER_1M = 0.0  # Embeddings only use input tokens
