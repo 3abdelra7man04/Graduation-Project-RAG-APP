@@ -13,7 +13,7 @@ from models.enums.ResponseEnums import ResponseSignal
 # Uvicorn logger instance
 logger = logging.getLogger("uvicorn.error")
 
-# nlp API router
+# gap analysis API router
 gap_analysis_router = APIRouter(
     prefix="/api/v1/gap_analysis",
     tags=["api_v1", "gap_analysis"],

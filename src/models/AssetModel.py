@@ -2,6 +2,7 @@ from .BaseDataModel import BaseDataModel
 from .db_schemes.asset import Asset
 from .enums.DataBaseEnum import DataBaseEnum
 from bson import ObjectId
+from datetime import datetime, timedelta
 
 class AssetModel(BaseDataModel):
 
@@ -71,4 +72,18 @@ class AssetModel(BaseDataModel):
         })
 
         return result
+
+    async def count_total_assets(self, asset_project_id: ObjectId):
+        project_id = ObjectId(asset_project_id) if isinstance(asset_project_id, str) else asset_project_id
+        return await self.collection.count_documents({
+            "asset_project_id": project_id
+        })
+
+    async def count_assets_this_week(self, asset_project_id: ObjectId):
+        project_id = ObjectId(asset_project_id) if isinstance(asset_project_id, str) else asset_project_id
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        return await self.collection.count_documents({
+            "asset_project_id": project_id,
+            "asset_pushed_at": {"$gte": seven_days_ago}
+        })
     

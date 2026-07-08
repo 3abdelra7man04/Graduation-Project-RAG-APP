@@ -1,4 +1,5 @@
-const DashboardPage = ({ t, theme, lang }) => {
+const DashboardPage = ({ t, theme, lang, user }) => {
+  const { useState, useEffect } = React;
   const isDark = theme === "dark";
   const primaryColor = "#1A9BB3";
   const secondaryColor = "#3D81F6";
@@ -8,11 +9,39 @@ const DashboardPage = ({ t, theme, lang }) => {
   const subText = isDark ? "#9ca3af" : "#6b7280";
   const borderColor = isDark ? "#333333" : "#f3f4f6";
 
+  const projectId = (user && user.projectId) ? user.projectId : "0";
+
+  const [uploadedDocsStats, setUploadedDocsStats] = useState({
+    total: "2,769",
+    delta: "+12% " + t("thisWeek").replace("{n}", ""),
+  });
+
+  useEffect(() => {
+    const fetchUploadedDocs = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/v1/dashboard/uploaded_documents/${projectId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.total_documents !== undefined) {
+            const pctText = data.percentage_change >= 0 ? `+${data.percentage_change}%` : `${data.percentage_change}%`;
+            setUploadedDocsStats({
+              total: Number(data.total_documents).toLocaleString(),
+              delta: `${pctText} ${t("thisWeek").replace("{n}", "").trim()}`,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching uploaded documents KPI:", err);
+      }
+    };
+    fetchUploadedDocs();
+  }, [projectId]);
+
   const stats = [
     {
       labelKey: "indexedDocuments",
-      value: "2,769",
-      delta: "+12% " + t("thisWeek").replace("{n}", ""),
+      value: uploadedDocsStats.total,
+      delta: uploadedDocsStats.delta,
       up: true,
       sparkData: [20, 35, 28, 45, 38, 52, 48, 60, 55, 70],
       color: primaryColor,

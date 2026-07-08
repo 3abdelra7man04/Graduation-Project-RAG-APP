@@ -78,6 +78,9 @@ class ResponseSignal(Enum):
     GAP_ANALYSIS_LIST_UNANSWERED_ERROR = "error in listing unanswered queries"
     GAP_ANALYSIS_QUERY_NOT_FOUND = "query not found"
     GAP_ANALYSIS_DISMISS_SUCCESS = "query dismissed successfully"
-    GAP_ANALYSIS_DISMISS_ERROR = "error in dismissing query"
     GAP_ANALYSIS_SUGGEST_SUCCESS = "document suggested successfully"
     GAP_ANALYSIS_SUGGEST_ERROR = "error in suggesting document"
+
+    # ---------------------- dashboard signals ----------------------
+    DASHBOARD_UPLOADED_DOCS_SUCCESS = "uploaded documents count retrieved successfully"
+    DASHBOARD_UPLOADED_DOCS_ERROR = "error in retrieving uploaded documents count"
