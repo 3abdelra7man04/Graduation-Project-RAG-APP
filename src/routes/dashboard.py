@@ -152,8 +152,37 @@ async def avg_latency(
         )
 
 @dashboard_router.get("/failed_queries/{project_id}")
-async def failed_queries(
+async def count_failed_queries(
     request: Request,
     project_id: str
 ):
-    pass
+    try:
+        db_client = request.app.db_client
+        project_model = await ProjectModel.create_instance(db_client)
+        project = await project_model.get_project_or_create_one(project_id=project_id)
+
+        if not project:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value}
+            )
+
+        query_model = await QueryModel.create_instance(db_client)
+        total_failed = await query_model.count_failed_queries(project_id=project.id)
+        since_yesterday = await query_model.count_failed_queries_since_yesterday(project_id=project.id)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "signal": ResponseSignal.DASHBOARD_FAILED_QUERIES_SUCCESS.value,
+                "project_id": str(project.id),
+                "total_failed": total_failed,
+                "since_yesterday_count": since_yesterday
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in count_failed_queries: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.DASHBOARD_FAILED_QUERIES_ERROR.value}
+        )

@@ -210,3 +210,12 @@ class QueryModel(BaseDataModel):
         if results and "avg_latency" in results[0] and results[0]["avg_latency"] is not None:
             return float(results[0]["avg_latency"])
         return 0.0
+
+    async def count_failed_queries_since_yesterday(self, project_id: ObjectId):
+        project_id = ObjectId(project_id) if isinstance(project_id, str) else project_id
+        one_day_ago = datetime.utcnow() - timedelta(days=1)
+        return await self.collection.count_documents({
+            "query_project_id": project_id,
+            "failed": True,
+            "createdAt": {"$gte": one_day_ago}
+        })

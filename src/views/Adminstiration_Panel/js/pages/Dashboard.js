@@ -23,6 +23,10 @@ const DashboardPage = ({ t, theme, lang, user }) => {
     value: "1.4s",
     delta: "-0.2s " + t("improved").replace("{n}", ""),
   });
+  const [failedQueriesStats, setFailedQueriesStats] = useState({
+    total: "47",
+    delta: "+3 " + t("sincYesterday").replace("{n}", ""),
+  });
 
   useEffect(() => {
     const fetchUploadedDocs = async () => {
@@ -80,9 +84,29 @@ const DashboardPage = ({ t, theme, lang, user }) => {
       }
     };
 
+    const fetchFailedQueries = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/v1/dashboard/failed_queries/${projectId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.total_failed !== undefined) {
+            const countSinceVal = data.since_yesterday_count || 0;
+            const signText = countSinceVal >= 0 ? `+${countSinceVal}` : `${countSinceVal}`;
+            setFailedQueriesStats({
+              total: Number(data.total_failed).toLocaleString(),
+              delta: `${signText} ${t("sincYesterday").replace("{n}", "").trim()}`,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching failed queries KPI:", err);
+      }
+    };
+
     fetchUploadedDocs();
     fetchQueriesAnswered();
     fetchAvgLatency();
+    fetchFailedQueries();
   }, [projectId]);
 
   const stats = [
@@ -112,8 +136,8 @@ const DashboardPage = ({ t, theme, lang, user }) => {
     },
     {
       labelKey: "failedQueries",
-      value: "47",
-      delta: "+3 " + t("sincYesterday").replace("{n}", ""),
+      value: failedQueriesStats.total,
+      delta: failedQueriesStats.delta,
       up: false,
       sparkData: [30, 28, 35, 25, 20, 30, 28, 40, 38, 47],
       color: "#ff4d4f",

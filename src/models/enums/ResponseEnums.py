@@ -88,3 +88,5 @@ class ResponseSignal(Enum):
     DASHBOARD_QUERIES_ANSWERED_ERROR = "error in retrieving queries answered count"
     DASHBOARD_AVG_LATENCY_SUCCESS = "average latency retrieved successfully"
     DASHBOARD_AVG_LATENCY_ERROR = "error in retrieving average latency"
+    DASHBOARD_FAILED_QUERIES_SUCCESS = "failed queries count retrieved successfully"
+    DASHBOARD_FAILED_QUERIES_ERROR = "error in retrieving failed queries count"
