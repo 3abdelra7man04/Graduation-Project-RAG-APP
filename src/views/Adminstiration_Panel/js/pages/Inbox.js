@@ -1,11 +1,13 @@
 // ── Chat Inbox — paginated log of user chats with confidence + feedback ─
 
-const InboxPage = ({ t, lang, theme }) => {
+const InboxPage = ({ t, lang, theme, user }) => {
   const { useState, useMemo, useEffect } = React;
   const isDark = theme === "dark";
   const primaryColor = "#1A9BB3";
   const secondaryColor = "#3D81F6";
   const isAr = lang === "ar";
+
+  const projectId = (user && user.projectId) ? user.projectId : "0";
 
   const [selectedChatId, setSelectedChatId] = useState("chat-1");
   const [startDate, setStartDate] = useState("");
@@ -14,6 +16,22 @@ const InboxPage = ({ t, lang, theme }) => {
   const [expandedTraceIdx, setExpandedTraceIdx] = useState(null);
 
   const [allChats, setAllChats] = useState([]);
+  const [avgLatencyVal, setAvgLatencyVal] = useState("1.4s");
+  const [avgLatencyDelta, setAvgLatencyDelta] = useState("");
+
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/v1/dashboard/avg_latency/${projectId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.overall_avg_latency !== undefined) {
+          setAvgLatencyVal(`${data.overall_avg_latency}s`);
+          const d = data.delta_latency;
+          const sign = d > 0 ? `+${d}s` : `${d}s`;
+          setAvgLatencyDelta(`${sign} ${isAr ? "تحسن" : "improved"}`);
+        }
+      })
+      .catch(err => console.error("Error fetching avg latency for inbox:", err));
+  }, [projectId, isAr]);
   
   useEffect(() => {
     fetch("http://localhost:5000/api/v1/chat_inbox/list")
@@ -121,13 +139,14 @@ const InboxPage = ({ t, lang, theme }) => {
           { label: isAr ? "إجمالي المحادثات" : "Total Chats", value: totalChats, color: primaryColor },
           { label: isAr ? "محادثات هذا الأسبوع" : "Chats This Week", value: chatsThisWeek, color: primaryColor },
           { label: isAr ? "إجمالي الاستفسارات" : "Total Queries", value: totalQueries, color: secondaryColor },
+          { label: isAr ? "متوسط وقت الاستجابة" : "Avg. Response Time", value: avgLatencyVal, color: primaryColor },
         ].map((s, i) => (
           <div
             key={i}
             style={{
               ...cardStyle,
               padding: "16px 20px",
-              flex: "1 1 calc(33% - 12px)",
+              flex: "1 1 calc(25% - 12px)",
               minWidth: "150px",
               display: "flex",
               flexDirection: "column",
