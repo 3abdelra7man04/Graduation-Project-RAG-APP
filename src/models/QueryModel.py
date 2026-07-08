@@ -158,3 +158,55 @@ class QueryModel(BaseDataModel):
                 {"resolved": True}
             ]
         })
+
+    async def get_avg_latency_overall(self, project_id: ObjectId):
+        project_id = ObjectId(project_id) if isinstance(project_id, str) else project_id
+        pipeline = [
+            {
+                "$match": {
+                    "query_project_id": project_id,
+                    "latency_seconds": {"$exists": True, "$ne": None, "$gt": 0},
+                    "$or": [
+                        {"failed": {"$ne": True}},
+                        {"resolved": True}
+                    ]
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "avg_latency": {"$avg": "$latency_seconds"}
+                }
+            }
+        ]
+        results = await self.collection.aggregate(pipeline).to_list(length=None)
+        if results and "avg_latency" in results[0] and results[0]["avg_latency"] is not None:
+            return float(results[0]["avg_latency"])
+        return 0.0
+
+    async def get_avg_latency_this_week(self, project_id: ObjectId):
+        project_id = ObjectId(project_id) if isinstance(project_id, str) else project_id
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        pipeline = [
+            {
+                "$match": {
+                    "query_project_id": project_id,
+                    "createdAt": {"$gte": seven_days_ago},
+                    "latency_seconds": {"$exists": True, "$ne": None, "$gt": 0},
+                    "$or": [
+                        {"failed": {"$ne": True}},
+                        {"resolved": True}
+                    ]
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "avg_latency": {"$avg": "$latency_seconds"}
+                }
+            }
+        ]
+        results = await self.collection.aggregate(pipeline).to_list(length=None)
+        if results and "avg_latency" in results[0] and results[0]["avg_latency"] is not None:
+            return float(results[0]["avg_latency"])
+        return 0.0

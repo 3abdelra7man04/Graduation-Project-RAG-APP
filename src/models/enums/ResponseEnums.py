@@ -86,3 +86,5 @@ class ResponseSignal(Enum):
     DASHBOARD_UPLOADED_DOCS_ERROR = "error in retrieving uploaded documents count"
     DASHBOARD_QUERIES_ANSWERED_SUCCESS = "queries answered count retrieved successfully"
     DASHBOARD_QUERIES_ANSWERED_ERROR = "error in retrieving queries answered count"
+    DASHBOARD_AVG_LATENCY_SUCCESS = "average latency retrieved successfully"
+    DASHBOARD_AVG_LATENCY_ERROR = "error in retrieving average latency"

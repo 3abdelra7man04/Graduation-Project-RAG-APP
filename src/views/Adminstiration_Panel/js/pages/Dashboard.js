@@ -19,6 +19,10 @@ const DashboardPage = ({ t, theme, lang, user }) => {
     total: "14,382",
     delta: "+8% " + t("thisWeek").replace("{n}", ""),
   });
+  const [avgLatencyStats, setAvgLatencyStats] = useState({
+    value: "1.4s",
+    delta: "-0.2s " + t("improved").replace("{n}", ""),
+  });
 
   useEffect(() => {
     const fetchUploadedDocs = async () => {
@@ -57,8 +61,28 @@ const DashboardPage = ({ t, theme, lang, user }) => {
       }
     };
 
+    const fetchAvgLatency = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/v1/dashboard/avg_latency/${projectId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.overall_avg_latency !== undefined) {
+            const deltaVal = data.delta_latency;
+            const sign = deltaVal > 0 ? `+${deltaVal}s` : `${deltaVal}s`;
+            setAvgLatencyStats({
+              value: `${data.overall_avg_latency}s`,
+              delta: `${sign} ${t("improved").replace("{n}", "").trim()}`,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching avg latency KPI:", err);
+      }
+    };
+
     fetchUploadedDocs();
     fetchQueriesAnswered();
+    fetchAvgLatency();
   }, [projectId]);
 
   const stats = [
@@ -80,8 +104,8 @@ const DashboardPage = ({ t, theme, lang, user }) => {
     },
     {
       labelKey: "avgResponseTime",
-      value: "1.4s",
-      delta: "-0.2s " + t("improved").replace("{n}", ""),
+      value: avgLatencyStats.value,
+      delta: avgLatencyStats.delta,
       up: true,
       sparkData: [2.1, 1.9, 2.0, 1.8, 1.7, 1.6, 1.5, 1.5, 1.4, 1.4],
       color: primaryColor,

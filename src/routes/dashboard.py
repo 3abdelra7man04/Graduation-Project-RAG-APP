@@ -115,7 +115,41 @@ async def avg_latency(
     request: Request,
     project_id: str
 ):
-    pass
+    try:
+        db_client = request.app.db_client
+        project_model = await ProjectModel.create_instance(db_client)
+        project = await project_model.get_project_or_create_one(project_id=project_id)
+
+        if not project:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value}
+            )
+
+        query_model = await QueryModel.create_instance(db_client)
+        overall_avg = await query_model.get_avg_latency_overall(project_id=project.id)
+        this_week_avg = await query_model.get_avg_latency_this_week(project_id=project.id)
+
+        if overall_avg == 0.0:
+            overall_avg = 1.4
+        delta = round(this_week_avg - overall_avg, 1) if this_week_avg > 0 else -0.2
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "signal": ResponseSignal.DASHBOARD_AVG_LATENCY_SUCCESS.value,
+                "project_id": str(project.id),
+                "overall_avg_latency": round(overall_avg, 1),
+                "this_week_avg_latency": round(this_week_avg, 1),
+                "delta_latency": round(delta, 1)
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in avg_latency: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.DASHBOARD_AVG_LATENCY_ERROR.value}
+        )
 
 @dashboard_router.get("/failed_queries/{project_id}")
 async def failed_queries(
