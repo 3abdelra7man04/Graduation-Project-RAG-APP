@@ -37,7 +37,7 @@ const SignInPage = ({ onSignIn, theme, toggleTheme }) => {
             userId: data.admin_id, 
             email: email.trim(),
             profile: profileData.adminData,
-            projectId: "1" 
+            projectId: "0" 
           });
         } else {
           setError("Failed to fetch user profile.");

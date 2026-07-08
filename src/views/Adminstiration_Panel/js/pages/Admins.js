@@ -9,10 +9,10 @@ const AdminsPage = ({ t, theme, user }) => {
   const [form, setForm] = useState({ name: "", email: "", role: "Viewer" });
 
   useEffect(() => {
-    if (!user || !user.projectId) return;
+    const projectId = (user && user.projectId) ? user.projectId : "0";
     const fetchAdmins = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/v1/admin/${user.projectId}/list`);
+        const res = await fetch(`http://localhost:5000/api/v1/admin/${projectId}/list`);
         if (res.ok) {
           const data = await res.json();
           const colors = ["#1A9BB3", "#3D81F6", "#25A9C2", "#5294FF", "#158296"];
