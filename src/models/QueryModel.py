@@ -4,6 +4,7 @@ from .enums.DataBaseEnum import DataBaseEnum
 from bson.objectid import ObjectId
 from .db_schemes.query import Query
 from datetime import datetime, timedelta
+from typing import Optional
 
 
 class QueryModel(BaseDataModel):
@@ -67,3 +68,71 @@ class QueryModel(BaseDataModel):
                 }).sort("createdAt", order).to_list(length = None)
 
         return [Query(**q) for q in queries]
+
+    async def count_queries_by_query_topic(
+        self,
+        query_topic: Optional[str] = None,
+        project_id: Optional[ObjectId] = None,
+    ):
+        match_stage = {}
+        if query_topic is not None:
+            match_stage["query_topic"] = query_topic
+        if project_id is not None:
+            match_stage["query_project_id"] = project_id
+
+        if query_topic is not None:
+            return await self.collection.count_documents(match_stage)
+
+        pipeline = []
+        if match_stage:
+            pipeline.append({"$match": match_stage})
+
+        pipeline.append({
+            "$group": {
+                "_id": "$query_topic",
+                "count": {"$sum": 1}
+            }
+        })
+        pipeline.append({
+            "$sort": {"count": -1}
+        })
+
+        results = await self.collection.aggregate(pipeline).to_list(length=None)
+        return {doc.get("_id", "Unknown"): doc.get("count", 0) for doc in results}
+
+    async def count_queries_by_topic(
+        self,
+        query_topic: Optional[str] = None,
+        project_id: Optional[ObjectId] = None,
+    ):
+        return await self.count_queries_by_query_topic(
+            query_topic=query_topic,
+            project_id=project_id,
+        )
+
+    async def count_failed_queries(self, project_id: ObjectId):
+        return await self.collection.count_documents({
+            "query_project_id": project_id,
+            "failed": True
+        })
+
+    async def count_total_queries(self, project_id: ObjectId):
+        return await self.collection.count_documents({
+            "query_project_id": project_id
+        })
+
+    async def get_unresolved_failed_queries(self, project_id: ObjectId, ascending: bool = False):
+        order = 1 if ascending else -1
+        queries = await self.collection.find({
+            "query_project_id": project_id,
+            "failed": True,
+            "resolved": {"$ne": True}
+        }).sort("createdAt", order).to_list(length=None)
+        return [Query(**q) for q in queries]
+
+    async def update_query_resolved_state(self, query_id: ObjectId, resolved: bool = True):
+        result = await self.collection.update_one(
+            {"_id": query_id},
+            {"$set": {"resolved": resolved}}
+        )
+        return result

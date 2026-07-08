@@ -67,4 +67,17 @@ class ResponseSignal(Enum):
     MONITOR_QUERY_SUCCESS = "monitor query retrieved successfully"
     MONITOR_QUERY_NOT_FOUND = "monitor query not found"
     MONITOR_CONVERSATION_SUCCESS = "monitor conversation retrieved successfully"
-    MONITOR_CONVERSATION_NOT_FOUND = "monitor conversation not found"
+    MONITOR_CONVERSATION_NOT_FOUND = "monitor conversation not found"
+
+    # ---------------------- gap analysis signals ----------------------
+    GAP_ANALYSIS_TOPICS_SUCCESS = "gap analysis topics retrieved successfully"
+    GAP_ANALYSIS_TOPICS_ERROR = "error in gap analysis topics"
+    GAP_ANALYSIS_WELL_COVERED_SUCCESS = "gap analysis well covered retrieved successfully"
+    GAP_ANALYSIS_WELL_COVERED_ERROR = "error in gap analysis well covered"
+    GAP_ANALYSIS_LIST_UNANSWERED_SUCCESS = "list of unanswered queries retrieved successfully"
+    GAP_ANALYSIS_LIST_UNANSWERED_ERROR = "error in listing unanswered queries"
+    GAP_ANALYSIS_QUERY_NOT_FOUND = "query not found"
+    GAP_ANALYSIS_DISMISS_SUCCESS = "query dismissed successfully"
+    GAP_ANALYSIS_DISMISS_ERROR = "error in dismissing query"
+    GAP_ANALYSIS_SUGGEST_SUCCESS = "document suggested successfully"
+    GAP_ANALYSIS_SUGGEST_ERROR = "error in suggesting document"

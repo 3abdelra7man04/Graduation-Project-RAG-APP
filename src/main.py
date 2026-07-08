@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI
-from routes import base, data, user, nlp, chat, admin, chat_inbox, Monitor
+from routes import base, data, user, nlp, chat, admin, chat_inbox, Monitor, gap_analysis
 from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import get_settings
 from fastapi.middleware.cors import CORSMiddleware
@@ -88,6 +88,8 @@ app.include_router(admin.admin_router)
 app.include_router(chat_inbox.chat_inbox_router)
 # include the monitor router created in Monitor.py
 app.include_router(Monitor.monitor_router)
+# include the gap analysis router
+app.include_router(gap_analysis.gap_analysis_router)
 
 # أهم جزء للربط مع React
 app.add_middleware(
