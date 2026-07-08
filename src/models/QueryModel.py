@@ -136,3 +136,25 @@ class QueryModel(BaseDataModel):
             {"$set": {"resolved": resolved}}
         )
         return result
+
+    async def count_answered_queries_total(self, project_id: ObjectId):
+        project_id = ObjectId(project_id) if isinstance(project_id, str) else project_id
+        return await self.collection.count_documents({
+            "query_project_id": project_id,
+            "$or": [
+                {"failed": {"$ne": True}},
+                {"resolved": True}
+            ]
+        })
+
+    async def count_answered_queries_this_week(self, project_id: ObjectId):
+        project_id = ObjectId(project_id) if isinstance(project_id, str) else project_id
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        return await self.collection.count_documents({
+            "query_project_id": project_id,
+            "createdAt": {"$gte": seven_days_ago},
+            "$or": [
+                {"failed": {"$ne": True}},
+                {"resolved": True}
+            ]
+        })

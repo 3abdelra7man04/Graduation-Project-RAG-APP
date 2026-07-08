@@ -15,6 +15,10 @@ const DashboardPage = ({ t, theme, lang, user }) => {
     total: "2,769",
     delta: "+12% " + t("thisWeek").replace("{n}", ""),
   });
+  const [queriesAnsweredStats, setQueriesAnsweredStats] = useState({
+    total: "14,382",
+    delta: "+8% " + t("thisWeek").replace("{n}", ""),
+  });
 
   useEffect(() => {
     const fetchUploadedDocs = async () => {
@@ -34,7 +38,27 @@ const DashboardPage = ({ t, theme, lang, user }) => {
         console.error("Error fetching uploaded documents KPI:", err);
       }
     };
+
+    const fetchQueriesAnswered = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/v1/dashboard/queries_answered/${projectId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.total_answered !== undefined) {
+            const pctText = data.percentage_change >= 0 ? `+${data.percentage_change}%` : `${data.percentage_change}%`;
+            setQueriesAnsweredStats({
+              total: Number(data.total_answered).toLocaleString(),
+              delta: `${pctText} ${t("thisWeek").replace("{n}", "").trim()}`,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching answered queries KPI:", err);
+      }
+    };
+
     fetchUploadedDocs();
+    fetchQueriesAnswered();
   }, [projectId]);
 
   const stats = [
@@ -48,8 +72,8 @@ const DashboardPage = ({ t, theme, lang, user }) => {
     },
     {
       labelKey: "queriesAnswered",
-      value: "14,382",
-      delta: "+8% " + t("thisWeek").replace("{n}", ""),
+      value: queriesAnsweredStats.total,
+      delta: queriesAnsweredStats.delta,
       up: true,
       sparkData: [80, 72, 90, 85, 95, 100, 92, 108, 115, 120],
       color: secondaryColor,

@@ -66,11 +66,49 @@ async def uploaded_documents(
 
 
 @dashboard_router.get("/queries_answered/{project_id}")
-async def queries_answered(
+async def count_queries_answered(
     request: Request,
     project_id: str
 ):
-    pass
+    try:
+        db_client = request.app.db_client
+        project_model = await ProjectModel.create_instance(db_client)
+        project = await project_model.get_project_or_create_one(project_id=project_id)
+
+        if not project:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value}
+            )
+
+        query_model = await QueryModel.create_instance(db_client)
+        total_answered = await query_model.count_answered_queries_total(project_id=project.id)
+        this_week_answered = await query_model.count_answered_queries_this_week(project_id=project.id)
+
+        previous_count = total_answered - this_week_answered
+        if previous_count > 0:
+            percentage = round((this_week_answered / previous_count) * 100)
+        elif total_answered > 0 and previous_count == 0:
+            percentage = 100
+        else:
+            percentage = 0
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "signal": ResponseSignal.DASHBOARD_QUERIES_ANSWERED_SUCCESS.value,
+                "project_id": str(project.id),
+                "total_answered": total_answered,
+                "this_week_count": this_week_answered,
+                "percentage_change": percentage
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in count_queries_answered: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.DASHBOARD_QUERIES_ANSWERED_ERROR.value}
+        )
 
 @dashboard_router.get("/avg_latency/{project_id}")
 async def avg_latency(

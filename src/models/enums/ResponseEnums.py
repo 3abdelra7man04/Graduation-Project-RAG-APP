@@ -84,3 +84,5 @@ class ResponseSignal(Enum):
     # ---------------------- dashboard signals ----------------------
     DASHBOARD_UPLOADED_DOCS_SUCCESS = "uploaded documents count retrieved successfully"
     DASHBOARD_UPLOADED_DOCS_ERROR = "error in retrieving uploaded documents count"
+    DASHBOARD_QUERIES_ANSWERED_SUCCESS = "queries answered count retrieved successfully"
+    DASHBOARD_QUERIES_ANSWERED_ERROR = "error in retrieving queries answered count"
