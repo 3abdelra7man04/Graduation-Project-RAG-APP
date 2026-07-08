@@ -18,7 +18,7 @@ const KnowledgePage = ({ t, theme, language }) => {
   // ── Fetch file list from backend ──────────────────────────────────────────
   const fetchFiles = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/v1/data/list/1");
+      const response = await fetch("http://localhost:5000/api/v1/data/list/0");
       if (response.ok) {
         const data = await response.json();
         if (data.all_files) {
@@ -65,7 +65,7 @@ const KnowledgePage = ({ t, theme, language }) => {
       if (!files || files.length === 0) return;
 
       setUploading(true);
-      const projectId = "1";
+      const projectId = "0";
       let successCount = 0;
       let failCount = 0;
 
@@ -159,7 +159,7 @@ const KnowledgePage = ({ t, theme, language }) => {
 
   const deleteDoc = async (id) => {
     try {
-      const projectId = "1";
+      const projectId = "0";
       const url = `http://localhost:5000/api/v1/data/delete/${projectId}/${id}`;
       console.log("Calling DELETE endpoint:", url);
       const response = await fetch(url, {
