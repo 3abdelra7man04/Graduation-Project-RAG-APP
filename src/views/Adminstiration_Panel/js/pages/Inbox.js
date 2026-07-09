@@ -18,6 +18,29 @@ const InboxPage = ({ t, lang, theme, user }) => {
   const [allChats, setAllChats] = useState([]);
   const [avgLatencyVal, setAvgLatencyVal] = useState("1.4s");
   const [avgLatencyDelta, setAvgLatencyDelta] = useState("");
+  const [monitorProjectStats, setMonitorProjectStats] = useState({
+    costThisMonth: "$0.0000",
+    inputTokens: "0",
+    outputTokens: "0",
+  });
+
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/v1/monitor/stats/${projectId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.stats) {
+          const costVal = data.stats.total_cost_this_month !== undefined 
+            ? data.stats.total_cost_this_month 
+            : (data.stats.total_project_cost || 0);
+          setMonitorProjectStats({
+            costThisMonth: `$${Number(costVal).toFixed(4)}`,
+            inputTokens: Number(data.stats.total_tokens_in || 0).toLocaleString(),
+            outputTokens: Number(data.stats.total_tokens_out || 0).toLocaleString(),
+          });
+        }
+      })
+      .catch(err => console.error("Error fetching project monitor stats:", err));
+  }, [projectId]);
 
   useEffect(() => {
     fetch(`http://localhost:5000/api/v1/dashboard/avg_latency/${projectId}`)
@@ -89,6 +112,20 @@ const InboxPage = ({ t, lang, theme, user }) => {
   // A simple representation for 'chats this week' (e.g. date >= 2026-06-19 assuming today is 2026-06-25)
   const chatsThisWeek = allChats.filter(c => c.date >= "2026-06-19").length;
 
+  const fallbackCost = allChats.reduce((acc, c) => acc + (c.total_conversation_cost || 0), 0);
+  const fallbackIn = allChats.reduce((acc, c) => acc + (c.total_tokens_in || 0), 0);
+  const fallbackOut = allChats.reduce((acc, c) => acc + (c.total_tokens_out || 0), 0);
+
+  const displayCostMonth = monitorProjectStats.costThisMonth !== "$0.0000" 
+    ? monitorProjectStats.costThisMonth 
+    : `$${fallbackCost.toFixed(4)}`;
+  const displayInputTokens = monitorProjectStats.inputTokens !== "0" 
+    ? monitorProjectStats.inputTokens 
+    : fallbackIn.toLocaleString();
+  const displayOutputTokens = monitorProjectStats.outputTokens !== "0" 
+    ? monitorProjectStats.outputTokens 
+    : fallbackOut.toLocaleString();
+
   // Group filtered chats by date
   const groupedChats = useMemo(() => {
     const groups = {};
@@ -133,8 +170,8 @@ const InboxPage = ({ t, lang, theme, user }) => {
         flexDirection: "column",
       }}
     >
-      {/* ── Summary row ── */}
-      <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap" }}>
+      {/* ── Summary row 1 (4 cards) ── */}
+      <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
         {[
           { label: isAr ? "إجمالي المحادثات" : "Total Chats", value: totalChats, color: primaryColor },
           { label: isAr ? "محادثات هذا الأسبوع" : "Chats This Week", value: chatsThisWeek, color: primaryColor },
@@ -147,6 +184,45 @@ const InboxPage = ({ t, lang, theme, user }) => {
               ...cardStyle,
               padding: "16px 20px",
               flex: "1 1 calc(25% - 12px)",
+              minWidth: "150px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "10px",
+                color: "#9ca3af",
+                fontWeight: "bold",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+              }}
+            >
+              {s.label}
+            </div>
+            <div
+              style={{ fontSize: "24px", fontWeight: "900", color: s.color }}
+            >
+              {s.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Summary row 2 (3 cards under the 4) ── */}
+      <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap" }}>
+        {[
+          { label: isAr ? "إجمالي التكلفة هذا الشهر" : "Total Cost This Month", value: displayCostMonth, color: "#10B981" },
+          { label: isAr ? "إجمالي رموز الإدخال" : "Total Input Tokens", value: displayInputTokens, color: primaryColor },
+          { label: isAr ? "إجمالي رموز الإخراج" : "Total Output Tokens", value: displayOutputTokens, color: secondaryColor },
+        ].map((s, i) => (
+          <div
+            key={i}
+            style={{
+              ...cardStyle,
+              padding: "16px 20px",
+              flex: "1 1 calc(33.33% - 12px)",
               minWidth: "150px",
               display: "flex",
               flexDirection: "column",

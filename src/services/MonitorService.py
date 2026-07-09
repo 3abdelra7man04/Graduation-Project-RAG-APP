@@ -228,6 +228,7 @@ class MonitorService(BaseService):
                 "avg_latency_seconds": 0.0
             }
             
+        now = datetime.utcnow()
         count = len(queries)
         total_cost = sum(getattr(q, "total_cost", 0.0) or 0.0 for q in queries)
         total_agent = sum(getattr(q, "agent_cost", 0.0) or 0.0 for q in queries)
@@ -236,6 +237,17 @@ class MonitorService(BaseService):
         total_hyde = sum(getattr(q, "hyde_cost", 0.0) or 0.0 for q in queries)
         total_class = sum(getattr(q, "classification_cost", 0.0) or 0.0 for q in queries)
         total_latency = sum(getattr(q, "latency_seconds", 0.0) or 0.0 for q in queries)
+        total_tokens_in = sum(getattr(q, "tokens_in", 0) or 0 for q in queries)
+        total_tokens_out = sum(getattr(q, "tokens_out", 0) or 0 for q in queries)
+        total_cost_this_month = sum(
+            (getattr(q, "total_cost", 0.0) or 0.0)
+            for q in queries
+            if getattr(q, "createdAt", None) and isinstance(getattr(q, "createdAt", None), datetime)
+            and getattr(q, "createdAt", None).year == now.year
+            and getattr(q, "createdAt", None).month == now.month
+        )
+        if total_cost_this_month == 0.0 and total_cost > 0.0:
+            total_cost_this_month = total_cost
         
         return {
             "total_queries_count": count,
@@ -243,6 +255,9 @@ class MonitorService(BaseService):
             "avg_agent_cost": round(total_agent / count, 6),
             "avg_tools_cost": round(total_tools / count, 6),
             "total_project_cost": round(total_cost, 6),
+            "total_cost_this_month": round(total_cost_this_month, 6),
+            "total_tokens_in": total_tokens_in,
+            "total_tokens_out": total_tokens_out,
             "total_agent_cost": round(total_agent, 6),
             "total_tools_cost": round(total_tools, 6),
             "total_embedding_cost": round(total_embed, 6),
