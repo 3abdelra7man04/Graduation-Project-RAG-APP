@@ -221,28 +221,6 @@ const DashboardPage = ({ t, theme, lang, user }) => {
     },
   ];
 
-  const topSources = [
-    {
-      name: lang === "ar" ? "سياسة الشركة 2024.pdf" : "Company Policy 2024.pdf",
-      queries: 1240,
-      pct: 100,
-    },
-    {
-      name: lang === "ar" ? "دليل المنتج Q3.docx" : "Product Handbook Q3.docx",
-      queries: 870,
-      pct: 70,
-    },
-    {
-      name: lang === "ar" ? "دليل الإعداد.md" : "Onboarding Guide.md",
-      queries: 540,
-      pct: 44,
-    },
-    {
-      name: lang === "ar" ? "دفتر تشغيل الهندسة.txt" : "Engineering Runbook.txt",
-      queries: 320,
-      pct: 26,
-    },
-  ];
 
   return (
     <div
@@ -355,30 +333,6 @@ const DashboardPage = ({ t, theme, lang, user }) => {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* ── Top queried sources ── */}
-      <div
-        className="card"
-        style={{ backgroundColor: cardBackground, border: `1px solid ${borderColor}`, padding: "20px", borderRadius: "15px" }}
-      >
-        <div className="card-header" style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-          <span className="card-title" style={{ fontWeight: "bold" }}>{t("topQueriedSources")}</span>
-          <span className="card-action" style={{ color: primaryColor, fontSize: "12px", cursor: "pointer" }}>{t("manageDocs")}</span>
-        </div>
-        <div className="card-body">
-          {topSources.map((d, i) => (
-            <div key={i} style={{ marginBottom: "14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
-                <span style={{ fontSize: "13px", color: textColor }}>{d.name}</span>
-                <span style={{ fontSize: "12px", color: subText }}>{d.queries.toLocaleString()} {t("queries")}</span>
-              </div>
-              <div className="progress-bar" style={{ background: isDark ? "#333" : "#eee", height: "6px", borderRadius: "10px", overflow: "hidden" }}>
-                <div className="progress-fill" style={{ width: `${d.pct}%`, background: primaryColor, height: "100%" }} />
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>
