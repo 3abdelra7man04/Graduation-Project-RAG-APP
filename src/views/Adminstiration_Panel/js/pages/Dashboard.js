@@ -27,6 +27,15 @@ const DashboardPage = ({ t, theme, lang, user }) => {
     total: "47",
     delta: "+3 " + t("sincYesterday").replace("{n}", ""),
   });
+  const [queriesPerDay, setQueriesPerDay] = useState({
+    mon: 42,
+    tue: 68,
+    wed: 55,
+    thu: 80,
+    fri: 73,
+    sat: 30,
+    sun: 25,
+  });
 
   useEffect(() => {
     const fetchUploadedDocs = async () => {
@@ -103,10 +112,25 @@ const DashboardPage = ({ t, theme, lang, user }) => {
       }
     };
 
+    const fetchQueriesPerDay = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/v1/dashboard/count_queries_this_week_per_day/${projectId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.counts) {
+            setQueriesPerDay(data.counts);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching queries per day:", err);
+      }
+    };
+
     fetchUploadedDocs();
     fetchQueriesAnswered();
     fetchAvgLatency();
     fetchFailedQueries();
+    fetchQueriesPerDay();
   }, [projectId]);
 
   const stats = [
@@ -144,15 +168,14 @@ const DashboardPage = ({ t, theme, lang, user }) => {
     },
   ];
 
-  // BACKEND: GET /api/queries/daily?range=7d
   const barData = [
-    { l: t("mon"), v: 42 },
-    { l: t("tue"), v: 68 },
-    { l: t("wed"), v: 55 },
-    { l: t("thu"), v: 80 },
-    { l: t("fri"), v: 73 },
-    { l: t("sat"), v: 30 },
-    { l: t("sun"), v: 25 },
+    { l: t("mon"), v: queriesPerDay.mon },
+    { l: t("tue"), v: queriesPerDay.tue },
+    { l: t("wed"), v: queriesPerDay.wed },
+    { l: t("thu"), v: queriesPerDay.thu },
+    { l: t("fri"), v: queriesPerDay.fri },
+    { l: t("sat"), v: queriesPerDay.sat },
+    { l: t("sun"), v: queriesPerDay.sun },
   ];
 
   const activityData = [

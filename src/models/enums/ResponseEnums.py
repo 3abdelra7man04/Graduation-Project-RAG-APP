@@ -90,3 +90,5 @@ class ResponseSignal(Enum):
     DASHBOARD_AVG_LATENCY_ERROR = "error in retrieving average latency"
     DASHBOARD_FAILED_QUERIES_SUCCESS = "failed queries count retrieved successfully"
     DASHBOARD_FAILED_QUERIES_ERROR = "error in retrieving failed queries count"
+    DASHBOARD_QUERIES_PER_DAY_SUCCESS = "queries per day retrieved successfully"
+    DASHBOARD_QUERIES_PER_DAY_ERROR = "error in retrieving queries per day"

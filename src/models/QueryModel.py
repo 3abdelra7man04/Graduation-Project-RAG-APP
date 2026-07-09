@@ -219,3 +219,20 @@ class QueryModel(BaseDataModel):
             "failed": True,
             "createdAt": {"$gte": one_day_ago}
         })
+
+    async def count_queries_this_week_per_day(self, project_id: ObjectId):
+        project_id = ObjectId(project_id) if isinstance(project_id, str) else project_id
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        queries = await self.collection.find({
+            "query_project_id": project_id,
+            "createdAt": {"$gte": seven_days_ago}
+        }).to_list(length=None)
+
+        day_names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+        counts = {day: 0 for day in day_names}
+        for q in queries:
+            created_at = q.get("createdAt")
+            if created_at and isinstance(created_at, datetime):
+                idx = created_at.weekday()
+                counts[day_names[idx]] += 1
+        return counts

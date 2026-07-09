@@ -186,3 +186,38 @@ async def count_failed_queries(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"signal": ResponseSignal.DASHBOARD_FAILED_QUERIES_ERROR.value}
         )
+
+
+@dashboard_router.get("/count_queries_this_week_per_day/{project_id}")
+async def count_queries_this_week_per_day(
+    request: Request,
+    project_id: str
+):
+    try:
+        db_client = request.app.db_client
+        project_model = await ProjectModel.create_instance(db_client)
+        project = await project_model.get_project_or_create_one(project_id=project_id)
+
+        if not project:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value}
+            )
+
+        query_model = await QueryModel.create_instance(db_client)
+        counts = await query_model.count_queries_this_week_per_day(project_id=project.id)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "signal": ResponseSignal.DASHBOARD_QUERIES_PER_DAY_SUCCESS.value,
+                "project_id": str(project.id),
+                "counts": counts
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in count_queries_this_week_per_day: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": ResponseSignal.DASHBOARD_QUERIES_PER_DAY_ERROR.value}
+        )
