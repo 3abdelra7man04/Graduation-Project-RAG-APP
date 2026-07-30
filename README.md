@@ -1,5 +1,31 @@
 # UNIASK
-UNIASK is a RAG-Based application that provides a conversational interface for university documentation. by answering student queries directly using the given university resources.  
+**UNIASK** is a RAG-Based application that provides a conversational interface for university documentation. by answering student queries directly using the given university resources.  
+
+## 📌 Overview
+
+Navigating university regulations, course schedules, department guidelines, and administrative procedures often involves fragmented documents and delayed support. **UniAsk** unifies university knowledge bases into an interactive, real-time AI assistant capable of delivering precise, context-aware answers with direct document citations.
+
+### Key Highlights
+- 💬 **Student Portal:** Modern conversational interface for real-time natural language Q&A.
+- ⚙️ **Admin Dashboard:** Control panel to manage document indexing, track retrieval performance, track cost analytics and update knowledge bases dynamically.
+- 🎯 **High Retrieval Accuracy:** Powered by vector similarity search with Hyde, re-ranking and other techniques for complex query resolution.
+
+---
+
+## 🛠️ Tech Stack
+
+| Domain | Technology / Framework |
+| :--- | :--- |
+| **Backend Framework** | Python 3.8+, FastAPI |
+| **Frontend Framework** | React.js |
+| **Database** | MongoDB |
+| **Vector Storage** | Qdrant |
+| **LLM & RAG Orchestration** | LangChain / PydanticAI |
+| **LLM Providers** | OpenAI / Cohere |
+| **Evaluation Framework** | Ragas |
+| **Containerization** | Docker, Docker Compose |
+
+---
 
 ## Requirements
 
