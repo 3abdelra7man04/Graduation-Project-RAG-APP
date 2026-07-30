@@ -68,7 +68,7 @@ $ uvicorn main:app --reload --host 0.0.0.0 --port 5000
 
 Download the POSTMAN collection from [/assets/mini-rag-app.postman_collection.json](/assets/mini-rag-app.postman_collection.json)
 
-## Run Docker Compose Services
+### Run Docker Compose Services
 
 ```bash
 cd docker
@@ -132,3 +132,31 @@ cd src\views\Adminstiration_Panel
 npm run dev
 ```
 The application will be available at (http://localhost:3000/)
+
+## Running evaluation test
+
+1) Create a new environment using the following command:
+```bash
+python -m venv .venv_eval
+```
+2) Activate the environment:
+```bash
+.venv_eval\Scripts\Activate.ps1
+```
+
+### Installation
+
+#### Install the required packages
+
+```bash
+cd eval
+pip install -r requirements.txt
+```
+
+### Setup the environment variables
+
+```bash
+cp .env.example .env
+```
+
+Set your environment variables in the `.env` file. Like `OPENAI_API_KEY` value.
