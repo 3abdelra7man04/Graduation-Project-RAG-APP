@@ -29,7 +29,7 @@ test_results = pd.DataFrame(TEST_DATA)
 
 print("Dataset is created")
 
-os.environ["OPENAI_API_KEY"] = ""
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 
 
@@ -37,7 +37,7 @@ os.environ["OPENAI_API_KEY"] = ""
 # This is the step that fixes your "AttributeError"
 client = AsyncOpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key=os.environ["OPENAI_API_KEY"]
+    api_key= OPENROUTER_API_KEY
 )
 
 factory = RAGEvaluatorFactory(client, "anthropic/claude-3-haiku", "openai/text-embedding-3-large")
