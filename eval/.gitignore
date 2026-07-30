@@ -4,4 +4,4 @@ __pycache__
 ignored
 datasets
 tests
-eval/test.py
+test.py
