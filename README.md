@@ -73,17 +73,36 @@ node -v
 npm -v
 ```
 
-### Installation of node packages
+### Chating UI
+
+#### Installation of node packages
 
 ```bash
-cd src\views
+cd src\views\Chating_UI
 npm install
 ```
 
-### run the frontend
+#### run the frontend
 
 ```bash
-cd src\views
+cd src\views\Chating_UI
 npm run dev
 ```
 The application will be available at (http://localhost:5173/)
+
+### Adminstiration Panel
+
+#### Installation of node packages
+
+```bash
+cd src\views\Adminstiration_Panel
+npm install
+```
+
+#### run the frontend
+
+```bash
+cd src\views\Adminstiration_Panel
+npm run dev
+```
+The application will be available at (http://localhost:3000/)
