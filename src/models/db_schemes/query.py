@@ -7,7 +7,7 @@ class Query(BaseModel):
     id: Optional[ObjectId] = Field(None, alias = "_id")
     query_project_id: ObjectId
     query_chat_id: ObjectId
-    query_user_id: ObjectId
+    query_user_id: Optional[ObjectId] = None   # None for guest chats
     query_text: str
     query_topic: str
     createdAt: datetime = Field(default_factory=datetime.utcnow)
