@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 from models.ChatModel import ChatModel
+from models.ProjectModel import ProjectModel
 from models.QueryModel import QueryModel
+from models.enums.ResponseEnums import ResponseSignal
 from bson import ObjectId
 from datetime import datetime
 
@@ -9,6 +11,13 @@ chat_inbox_router = APIRouter(
     prefix="/api/v1/chat_inbox",
     tags=["api_v1", "chat_inbox"],
 )
+
+
+def project_not_found_response():
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"signal": ResponseSignal.PROJECT_NOT_FOUND.value},
+    )
 
 from services.MonitorService import (
     MonitorService,
@@ -22,13 +31,19 @@ from services.MonitorService import (
 )
 
 
-@chat_inbox_router.get("/list")
-async def list_all_chats(request: Request):
+@chat_inbox_router.get("/list/{project_id}")
+async def list_all_chats(request: Request, project_id: str):
     db_client = request.app.db_client
+
+    project_model = await ProjectModel.create_instance(db_client)
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
+    if not project:
+        return project_not_found_response()
 
     chat_model = await ChatModel.create_instance(db_client)
     query_model = await QueryModel.create_instance(db_client)
-    all_chats = await chat_model.get_all_chats(ascending=False)
+    all_chats = await chat_model.get_all_chats(project_id=project.id, ascending=False)
 
     for chat in all_chats:
         chat_id_str = str(chat["_id"])

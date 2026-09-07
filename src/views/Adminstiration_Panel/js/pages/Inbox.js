@@ -57,7 +57,7 @@ const InboxPage = ({ t, lang, theme, user }) => {
   }, [projectId, isAr]);
   
   useEffect(() => {
-    fetch("http://localhost:5000/api/v1/chat_inbox/list")
+    fetch(`http://localhost:5000/api/v1/chat_inbox/list/${projectId}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.all_chats) {
@@ -68,7 +68,7 @@ const InboxPage = ({ t, lang, theme, user }) => {
         }
       })
       .catch(err => console.error("Error fetching chats:", err));
-  }, []);
+  }, [projectId]);
 
   useEffect(() => {
     if (selectedChatId && selectedChatId !== "chat-1") {
