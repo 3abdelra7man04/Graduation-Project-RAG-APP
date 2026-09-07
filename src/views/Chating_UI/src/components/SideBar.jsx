@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
 import { assets } from "../assets/assets/assets";
 import { translations } from "../utils/languages";
+import { getInitials } from "../utils/getInitials";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
 
@@ -63,15 +64,6 @@ const SideBar = ({ isMenuOpen, setIsMenuOpen, setShowAuthOverlay }) => {
     if (!aPinned && bPinned) return 1;
     return new Date(b.updatedAt) - new Date(a.updatedAt);
   }) : [];
-
-  const getInitials = (name) => {
-    if (!name) return "GU";
-    const names = name.split(" ");
-    if (names.length >= 2) {
-      return (names[0][0] + names[1][0]).toUpperCase();
-    }
-    return names[0][0].toUpperCase();
-  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {

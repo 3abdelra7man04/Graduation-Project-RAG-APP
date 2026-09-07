@@ -13,7 +13,7 @@ export const AppContextProvider = (props) => {
     const [theme, setTheme] = useState(localStorage.getItem('theme') || "light");
     const [language, setLanguage] = useState(localStorage.getItem('language') || "en");
 
-    const backendUrl = "http://127.0.0.1:5000";
+    const backendUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
 
     // 2. إدارة الاتجاه واللغة
     useEffect(() => {

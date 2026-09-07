@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { assets } from "../assets/assets/assets";
 import { useParams, useNavigate } from 'react-router-dom';
 import { translations } from "../utils/languages";
+import { getInitials } from "../utils/getInitials";
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -16,15 +17,6 @@ const ChatBox = () => {
 
     // جلب ملف الترجمة بناءً على اللغة المختارة
     const content = translations[language || 'en'];
-
-    const getInitials = (name) => {
-        if (!name) return "GU";
-        const names = name.split(" ");
-        if (names.length >= 2) {
-            return (names[0][0] + names[1][0]).toUpperCase();
-        }
-        return names[0][0].toUpperCase();
-    };
 
     // منطق الـ Routing والتحقق من الـ ChatId
     useEffect(() => {
