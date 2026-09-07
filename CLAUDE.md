@@ -27,7 +27,7 @@ src/                    FastAPI backend (run from INSIDE this directory)
   agents/               pydantic-ai agent deps and tools
   assets/files/         Uploaded documents + page images (gitignored)
   views/Chating_UI/     Student chat frontend (React 19 + Vite)
-  views/Adminstiration_Panel/  Admin dashboard (React via CDN + Babel, no bundler)
+  views/Adminstiration_Panel/  Admin dashboard (React 18 + Vite)
 eval/                   Ragas-based retrieval/answer evaluation harness (separate venv)
 docker/                 docker-compose for MongoDB + Qdrant
 data/                   Source Arabic PDFs
@@ -176,13 +176,14 @@ Do not "quietly fix" these; raise them if relevant to the task at hand.
   `routes/admin.py`), and admin invites hardcode `12345678`. There is no session token or auth
   middleware — endpoints are unauthenticated.
 - CORS in `main.py` allows all origins.
-- The admin panel's `js/pages/Settings.js` is local React state only — it makes no API calls, so
-  the LLM config, chunking and feature-flag controls render but change nothing. `INIT_DOCS` and
-  `INIT_ADMINS` in `js/data.js` are leftover mock constants, now referenced nowhere (only
-  `TYPE_COLORS` is still used). Every other admin page fetches the live API.
-- Backend URLs are hardcoded in both frontends — `http://localhost:5000` across ~20 call sites in
-  the admin panel, `http://127.0.0.1:5000` in `Chating_UI/src/context/AppContext.jsx`. Neither
-  reads an env var.
+- The admin panel's `src/pages/Settings.jsx` is local React state only — it makes no API calls, so
+  the LLM config, chunking and feature-flag controls render but change nothing. Every other admin
+  page fetches the live API through the shared `src/api.js` client.
 - `project_id` is hardcoded `"0"` throughout both frontends, except
-  `Adminstiration_Panel/js/SignIn.js`, which logs admins in against project `"1"`.
+  `Adminstiration_Panel/src/SignIn.jsx`, which logs admins in against project `"1"`.
 - `main.py` uses the deprecated `app.on_event` startup/shutdown hooks.
+- The admin panel's `node_modules` directory was tracked in git before its Vite migration (no
+  `.gitignore` existed for the folder). A `.gitignore` now exists going forward, but the
+  already-tracked `node_modules` entries were not untracked (`git rm --cached -r node_modules`) —
+  that's a deliberate follow-up decision, not done automatically, since it rewrites ~1600 tracked
+  paths at once.
